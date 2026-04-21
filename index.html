@@ -468,6 +468,9 @@ function render(){
 
 // ── INIT ──
 loadLocal();
+// Auto-activate stored API key on load
+const _storedKey = localStorage.getItem(KEYS.deepseekKey);
+if (_storedKey) state.deepseekKey = _storedKey;
 render();
 pullFromSheet();
 </script>
