@@ -248,8 +248,10 @@ function render(){
 }
 
 loadLocal();
+// Restore API key from storage explicitly
+const savedKey = localStorage.getItem('fd-deepseek-key');
+if (savedKey) state.deepseekKey = savedKey;
 render();
-// Try to pull from sheet on load
 pullFromSheet();
 </script>
 </body>
