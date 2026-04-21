@@ -987,7 +987,14 @@ async function sheetsGet(key) {
   const url = `${SHEETS_URL}?action=get&key=${encodeURIComponent(key)}`;
   const res = await fetch(url);
   const text = await res.text();
-  try { return JSON.parse(text); } catch { return null; }
+  try {
+    const outer = JSON.parse(text);
+    // Apps Script returns {key: "...", value: "..."} where value is a JSON string
+    if (outer && outer.value !== undefined) {
+      return typeof outer.value === 'string' ? JSON.parse(outer.value) : outer.value;
+    }
+    return outer;
+  } catch { return null; }
 }
 
 let syncTimer = null;
