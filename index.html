@@ -155,7 +155,7 @@ async function removeEntry(date,id){state.entries[date]=state.entries[date].filt
 async function saveGoal(){const g=parseInt(state.goalInput);if(!isNaN(g)&&g>0)state.goal=g;state.editGoal=false;await saveAndSync();}
 async function logWeight(){const w=parseFloat(state.weightInput);if(isNaN(w)||w<=0)return;state.weights[getTodayKey()]={value:w,unit:state.weightUnit};state.weightInput='';await saveAndSync();}
 async function removeWeight(date){delete state.weights[date];await saveAndSync();}
-function saveSettings(){const k=document.getElementById('api-key-input');if(k)state.deepseekKey=k.value.trim();saveLocal();alert('Settings saved!');render();}
+function saveSettings(){const k=document.getElementById('api-key-input');if(k){state.deepseekKey=k.value.trim();localStorage.setItem('fd-deepseek-key',state.deepseekKey);}saveLocal();alert('Settings saved!');render();}
 function exportData(){const data=JSON.stringify({entries:state.entries,weights:state.weights,goal:state.goal},null,2);const blob=new Blob([data],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='food-diary-backup-'+getTodayKey()+'.json';a.click();}
 function importData(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=(e)=>{try{const imp=JSON.parse(e.target.result);if(confirm('Replace all current data?')){state.entries=imp.entries||{};state.weights=imp.weights||{};state.goal=imp.goal||2000;state.goalInput=String(state.goal);saveAndSync();alert('Data imported!');}}catch(err){alert('Invalid file');}};reader.readAsText(file);}
 
