@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Expenses">
+<meta name="theme-color" content="#0f0f10">
+<title>Daily Expenses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f10;
+    --surface: #1a1a1e;
+    --surface2: #242428;
+    --border: #2e2e34;
+    --text: #e8e8ec;
+    --muted: #6b6b78;
+    --accent: #f0c040;
+    --accent2: #4a9eff;
+    --danger: #ff5a5a;
+    --success: #3ecf8e;
+    --warning: #ff9500;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    min-height: 100vh;
+    overscroll-behavior: none;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header h1 {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+  .sync-btn, .settings-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+  .sync-btn:hover, .settings-btn:hover { color: var(--text); border-color: var(--muted); }
+  .sync-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    display: inline-block;
+    margin-right: 5px;
+  }
+  .sync-dot.syncing { background: var(--warning); animation: pulse 0.8s infinite; }
+  .sync-dot.error { background: var(--danger); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── NAV TABS ── */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 1;
+    min-width: 70px;
+    padding: 11px 8px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── MAIN CONTENT ── */
+  .page { display: none; padding: 16px; max-width: 600px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* ── TODAY PAGE ── */
+  .budget-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .budget-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+  .budget-label { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .budget-amount { font-family: var(--mono); font-size: 26px; font-weight: 500; color: var(--text); }
+  .budget-amount span { font-size: 13px; color: var(--muted); }
+  .budget-remaining { font-family: var(--mono); font-size: 13px; }
+  .progress-track {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease, background 0.3s;
+    background: var(--success);
+  }
+  .progress-fill.warn { background: var(--warning); }
+  .progress-fill.over { background: var(--danger); }
+
+  /* ── ADD EXPENSE FORM ── */
+  .add-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .form-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .form-row { display: flex; gap: 10px; margin-bottom: 10px; }
+  .form-row.single { display: block; }
+  input, select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent2); }
+  input[type="number"] { font-family: var(--mono); font-size: 18px; }
+  .amount-wrap { position: relative; flex: 0 0 140px; }
+  .amount-prefix {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .amount-wrap input { padding-left: 26px; }
+  select option { background: var(--surface2); }
+  .btn-add {
+    width: 100%;
+    background: var(--accent);
+    color: #0f0f10;
+    border: none;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    margin-top: 4px;
+  }
+  .btn-add:active { transform: scale(0.98); }
+  .btn-add:hover { opacity: 0.9; }
+
+  /* ── EXPENSE LIST ── */
+  .list-header {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    margin-top: 4px;
+  }
+  .expense-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+  .cat-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .expense-info { flex: 1; min-width: 0; }
+  .expense-note {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .expense-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .expense-amount {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    flex-shrink: 0;
+  }
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--border);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 4px;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+  .del-btn:hover { color: var(--danger); }
+  .empty-state {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── WEEK PAGE ── */
+  .week-chart { margin-bottom: 16px; }
+  .day-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .day-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    width: 28px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .day-track {
+    flex: 1;
+    height: 20px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .day-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--accent2);
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+  }
+  .day-fill.today { background: var(--accent); }
+  .day-fill.over { background: var(--danger); }
+  .day-val {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    width: 60px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .cat-breakdown { margin-bottom: 16px; }
+  .cat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .cat-info { flex: 1; min-width: 0; }
+  .cat-name {
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 5px;
+  }
+  .cat-track {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .cat-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+  .cat-amount {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .cat-target {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* ── MONTH PAGE ── */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .stat-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+  .stat-value { font-family: var(--mono); font-size: 22px; font-weight: 500; }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.success { color: var(--success); }
+  .stat-value.danger { color: var(--danger); }
+
+  .month-list { }
+  .month-day-group { margin-bottom: 12px; }
+  .month-day-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .month-day-total { color: var(--text); }
+
+  /* ── SETTINGS PAGE ── */
+  .settings-group { margin-bottom: 20px; }
+  .settings-group-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .setting-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .setting-label { flex: 1; font-size: 14px; }
+  .setting-input {
+    width: 100px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    text-align: right;
+    outline: none;
+  }
+  .setting-input:focus { border-color: var(--accent2); }
+  .btn-save-settings {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 4px;
+  }
+  .btn-save-settings:hover { background: var(--accent); color: #0f0f10; }
+
+  .sync-section { margin-top: 16px; }
+  .btn-pull {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 10px;
+  }
+  .btn-pull:hover { background: var(--accent2); color: #0f0f10; }
+  .sync-status {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    padding: 8px;
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    transition: transform 0.25s ease;
+    z-index: 999;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--success); color: var(--success); }
+  .toast.error { border-color: var(--danger); color: var(--danger); }
+
+  /* ── MISC ── */
+  .section-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  @media (max-width: 360px) {
+    .form-row { flex-direction: column; }
+    .amount-wrap { flex: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>💸 Daily Expenses</h1>
+  <div class="header-actions">
+    <button class="sync-btn" onclick="syncToSheets()">
+      <span class="sync-dot" id="syncDot"></span>Sync
+    </button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('today')">Today</div>
+  <div class="tab" onclick="showTab('week')">Week</div>
+  <div class="tab" onclick="showTab('month')">Month</div>
+  <div class="tab" onclick="showTab('settings')">Settings</div>
+</div>
+
+<!-- TODAY PAGE -->
+<div class="page active" id="page-today">
+
+  <div class="budget-card">
+    <div class="budget-row">
+      <div>
+        <div class="budget-label">Spent Today</div>
+        <div class="budget-amount" id="todayTotal">$0.00</div>
+      </div>
+      <div style="text-align:right">
+        <div class="budget-label">Remaining</div>
+        <div class="budget-remaining" id="todayRemaining" style="color:var(--success)">$0.00</div>
+      </div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="budgetProgress" style="width:0%"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Daily Budget</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="budgetLabel">$0</span>
+    </div>
+  </div>
+
+  <div class="add-form">
+    <div class="form-title">+ New Expense</div>
+    <div class="form-row">
+      <div class="amount-wrap">
+        <span class="amount-prefix">$</span>
+        <input type="number" id="inputAmount" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+      </div>
+      <select id="inputCat">
+        <option value="food">🍔 Food</option>
+        <option value="fuel">⛽ Fuel</option>
+        <option value="entertainment">🎬 Entertainment</option>
+        <option value="bills">🧾 Bills</option>
+        <option value="shopping">🛍️ Shopping</option>
+        <option value="health">💊 Health</option>
+        <option value="transport">🚗 Transport</option>
+        <option value="other">📦 Other</option>
+      </select>
+    </div>
+    <div class="form-row single" style="margin-bottom:10px">
+      <input type="text" id="inputNote" placeholder="Note (optional)" maxlength="80">
+    </div>
+    <button class="btn-add" onclick="addExpense()">Add Expense</button>
+  </div>
+
+  <div class="list-header" id="todayListLabel">Today's Expenses</div>
+  <div id="todayList"></div>
+</div>
+
+<!-- WEEK PAGE -->
+<div class="page" id="page-week">
+  <div class="section-card">
+    <div class="section-title">This Week's Spending</div>
+    <div class="week-chart" id="weekChart"></div>
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:8px">
+      <span>Weekly Total</span>
+      <span id="weekTotal" style="color:var(--text)">$0.00</span>
+    </div>
+  </div>
+  <div class="section-card">
+    <div class="section-title">Category Breakdown</div>
+    <div id="catBreakdown"></div>
+  </div>
+</div>
+
+<!-- MONTH PAGE -->
+<div class="page" id="page-month">
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Month Total</div>
+      <div class="stat-value accent" id="monthTotal">$0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Daily Avg</div>
+      <div class="stat-value" id="monthAvg">$0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Best Day</div>
+      <div class="stat-value success" id="monthBest">$0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Worst Day</div>
+      <div class="stat-value danger" id="monthWorst">$0</div>
+    </div>
+  </div>
+  <div class="section-card">
+    <div class="section-title">Daily Breakdown</div>
+    <div id="monthList"></div>
+  </div>
+</div>
+
+<!-- SETTINGS PAGE -->
+<div class="page" id="page-settings">
+  <div class="settings-group">
+    <div class="settings-group-title">Budget Targets</div>
+    <div class="setting-row">
+      <div class="setting-label">Daily Budget</div>
+      <input class="setting-input" type="number" id="settingDailyBudget" value="100" min="0">
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">Weekly Budget</div>
+      <input class="setting-input" type="number" id="settingWeeklyBudget" value="700" min="0">
+    </div>
+  </div>
+  <div class="settings-group">
+    <div class="settings-group-title">Weekly Category Targets</div>
+    <div class="setting-row">
+      <div class="setting-label" style="display:flex;align-items:center;gap:8px"><span class="cat-dot" style="background:#f97316"></span> Food</div>
+      <input class="setting-input" type="number" id="target_food" value="200" min="0">
+    </div>
+    <div class="setting-row">
+      <div class="setting-label" style="display:flex;align-items:center;gap:8px"><span class="cat-dot" style="background:#84cc16"></span> Fuel</div>
+      <input class="setting-input" type="number" id="target_fuel" value="100" min="0">
+    </div>
+    <div class="setting-row">
+      <div class="setting-label" style="display:flex;align-items:center;gap:8px"><span class="cat-dot" style="background:#a855f7"></span> Entertainment</div>
+      <input class="setting-input" type="number" id="target_entertainment" value="80" min="0">
+    </div>
+    <div class="setting-row">
+      <div class="setting-label" style="display:flex;align-items:center;gap:8px"><span class="cat-dot" style="background:#3b82f6"></span> Bills</div>
+      <input class="setting-input" type="number" id="target_bills" value="150" min="0">
+    </div>
+    <div class="setting-row">
+      <div class="setting-label" style="display:flex;align-items:center;gap:8px"><span class="cat-dot" style="background:#ec4899"></span> Shopping</div>
+      <input class="setting-input" type="number" id="target_shopping" value="100" min="0">
+    </div>
+    <div class="setting-row">
+      <div class="setting-label" style="display:flex;align-items:center;gap:8px"><span class="cat-dot" style="background:#14b8a6"></span> Health</div>
+      <input class="setting-input" type="number" id="target_health" value="60" min="0">
+    </div>
+    <div class="setting-row">
+      <div class="setting-label" style="display:flex;align-items:center;gap:8px"><span class="cat-dot" style="background:#f59e0b"></span> Transport</div>
+      <input class="setting-input" type="number" id="target_transport" value="60" min="0">
+    </div>
+    <div class="setting-row">
+      <div class="setting-label" style="display:flex;align-items:center;gap:8px"><span class="cat-dot" style="background:#6b7280"></span> Other</div>
+      <input class="setting-input" type="number" id="target_other" value="50" min="0">
+    </div>
+    <button class="btn-save-settings" onclick="saveSettings()">Save Settings</button>
+  </div>
+
+  <div class="sync-section">
+    <div class="settings-group-title">Google Sheets Sync</div>
+    <button class="btn-pull" onclick="pullFromSheets()">⬇ Pull from Sheets</button>
+    <div class="sync-status" id="syncStatus">Last sync: never</div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxK0s26J0Z4ES_IRdJ0JsTWAuFf2zVs23aneS1QpjHL1RN0OCbyz7m1mdKGf-Eq2-8U/exec';
+
+const CAT_COLORS = {
+  food: '#f97316', fuel: '#84cc16', entertainment: '#a855f7',
+  bills: '#3b82f6', shopping: '#ec4899', health: '#14b8a6',
+  transport: '#f59e0b', other: '#6b7280'
+};
+const CAT_LABELS = {
+  food:'Food', fuel:'Fuel', entertainment:'Entertainment',
+  bills:'Bills', shopping:'Shopping', health:'Health',
+  transport:'Transport', other:'Other'
+};
+
+// ── STATE ──
+let expenses = [];
+let settings = {
+  dailyBudget: 100,
+  weeklyBudget: 700,
+  targets: { food:200, fuel:100, entertainment:80, bills:150, shopping:100, health:60, transport:60, other:50 }
+};
+
+// ── INIT ──
+function init() {
+  loadLocal();
+  loadSettingsUI();
+  renderAll();
+}
+
+function loadLocal() {
+  try {
+    const e = localStorage.getItem('expense_tracker_data');
+    if (e) expenses = JSON.parse(e);
+    const s = localStorage.getItem('expense_tracker_settings');
+    if (s) settings = Object.assign(settings, JSON.parse(s));
+  } catch(err) {}
+}
+
+function saveLocal() {
+  localStorage.setItem('expense_tracker_data', JSON.stringify(expenses));
+  localStorage.setItem('expense_tracker_settings', JSON.stringify(settings));
+}
+
+// ── UTILS ──
+function today() {
+  return new Date().toISOString().split('T')[0];
+}
+function fmt(n) {
+  return '$' + Number(n).toFixed(2);
+}
+function fmtShort(n) {
+  return '$' + Math.round(n);
+}
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+}
+function getWeekDates() {
+  const d = new Date();
+  const day = d.getDay(); // 0=Sun
+  const mon = new Date(d);
+  mon.setDate(d.getDate() - ((day + 6) % 7));
+  const dates = [];
+  for (let i=0;i<7;i++) {
+    const dd = new Date(mon);
+    dd.setDate(mon.getDate()+i);
+    dates.push(dd.toISOString().split('T')[0]);
+  }
+  return dates;
+}
+function getMonthDates() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const dates = [];
+  const days = new Date(y,m+1,0).getDate();
+  for (let d=1;d<=days;d++) {
+    dates.push(`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+  }
+  return dates;
+}
+
+// ── TABS ──
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active', ['today','week','month','settings'][i]===name);
+  });
+  document.querySelectorAll('.page').forEach(p=>{
+    p.classList.toggle('active', p.id==='page-'+name);
+  });
+  if (name==='week') renderWeek();
+  if (name==='month') renderMonth();
+}
+
+// ── ADD EXPENSE ──
+function addExpense() {
+  const amt = parseFloat(document.getElementById('inputAmount').value);
+  if (!amt || amt <= 0) { showToast('Enter a valid amount','error'); return; }
+  const cat = document.getElementById('inputCat').value;
+  const note = document.getElementById('inputNote').value.trim() || CAT_LABELS[cat];
+  const exp = { id: genId(), date: today(), amount: amt, category: cat, note, ts: Date.now() };
+  expenses.push(exp);
+  saveLocal();
+  syncToSheets(true);
+  document.getElementById('inputAmount').value = '';
+  document.getElementById('inputNote').value = '';
+  renderToday();
+  showToast('Expense added ✓','success');
+}
+
+function deleteExpense(id) {
+  expenses = expenses.filter(e=>e.id!==id);
+  saveLocal();
+  syncToSheets(true);
+  renderToday();
+}
+
+// ── RENDER TODAY ──
+function renderToday() {
+  const t = today();
+  const todayExp = expenses.filter(e=>e.date===t).sort((a,b)=>b.ts-a.ts);
+  const total = todayExp.reduce((s,e)=>s+e.amount,0);
+  const budget = settings.dailyBudget;
+  const pct = budget > 0 ? Math.min(100, (total/budget)*100) : 0;
+  const remaining = budget - total;
+
+  document.getElementById('todayTotal').textContent = fmt(total);
+  const remEl = document.getElementById('todayRemaining');
+  remEl.textContent = remaining >= 0 ? fmt(remaining) : '-'+fmt(Math.abs(remaining));
+  remEl.style.color = remaining >= 0 ? 'var(--success)' : 'var(--danger)';
+  document.getElementById('budgetLabel').textContent = fmt(budget);
+
+  const bar = document.getElementById('budgetProgress');
+  bar.style.width = pct+'%';
+  bar.className = 'progress-fill' + (pct>100?' over':pct>75?' warn':'');
+
+  const list = document.getElementById('todayList');
+  if (todayExp.length===0) {
+    list.innerHTML = '<div class="empty-state">No expenses today</div>';
+    return;
+  }
+  list.innerHTML = todayExp.map(e=>`
+    <div class="expense-item">
+      <div class="cat-dot" style="background:${CAT_COLORS[e.category]}"></div>
+      <div class="expense-info">
+        <div class="expense-note">${escHtml(e.note)}</div>
+        <div class="expense-meta">${CAT_LABELS[e.category]} · ${new Date(e.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+      <div class="expense-amount">${fmt(e.amount)}</div>
+      <button class="del-btn" onclick="deleteExpense('${e.id}')">×</button>
+    </div>
+  `).join('');
+}
+
+// ── RENDER WEEK ──
+function renderWeek() {
+  const weekDates = getWeekDates();
+  const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const t = today();
+  const budget = settings.dailyBudget;
+
+  const dayTotals = weekDates.map(d=>({
+    date: d,
+    total: expenses.filter(e=>e.date===d).reduce((s,e)=>s+e.amount,0),
+    isToday: d===t
+  }));
+  const weekTotal = dayTotals.reduce((s,d)=>s+d.total,0);
+  const maxDay = Math.max(...dayTotals.map(d=>d.total), budget, 1);
+
+  document.getElementById('weekTotal').textContent = fmt(weekTotal);
+
+  document.getElementById('weekChart').innerHTML = dayTotals.map((d,i)=>{
+    const pct = Math.min(100,(d.total/maxDay)*100);
+    const over = budget > 0 && d.total > budget;
+    return `
+      <div class="day-bar-row">
+        <div class="day-label">${dayNames[i]}</div>
+        <div class="day-track">
+          <div class="day-fill ${d.isToday?'today':''} ${over?'over':''}" style="width:${pct}%"></div>
+        </div>
+        <div class="day-val">${d.total>0?fmtShort(d.total):''}</div>
+      </div>
+    `;
+  }).join('');
+
+  // Category breakdown
+  const catTotals = {};
+  weekDates.forEach(d=>{
+    expenses.filter(e=>e.date===d).forEach(e=>{
+      catTotals[e.category] = (catTotals[e.category]||0)+e.amount;
+    });
+  });
+  const cats = Object.keys(CAT_COLORS).filter(c=>catTotals[c]>0 || settings.targets[c]>0);
+  const maxCat = Math.max(...cats.map(c=>Math.max(catTotals[c]||0,settings.targets[c]||0)),1);
+
+  document.getElementById('catBreakdown').innerHTML = cats.map(c=>{
+    const spent = catTotals[c]||0;
+    const target = settings.targets[c]||0;
+    const pct = target>0 ? Math.min(100,(spent/target)*100) : spent>0?100:0;
+    const over = target>0 && spent>target;
+    return `
+      <div class="cat-row">
+        <div class="cat-dot" style="background:${CAT_COLORS[c]}"></div>
+        <div class="cat-info">
+          <div class="cat-name">${CAT_LABELS[c]}
+            ${over?'<span style="font-size:10px;color:var(--danger);font-family:var(--mono)">OVER</span>':''}
+          </div>
+          <div class="cat-track">
+            <div class="cat-fill" style="width:${pct}%;background:${over?'var(--danger)':CAT_COLORS[c]}"></div>
+          </div>
+        </div>
+        <div class="cat-amount">
+          ${fmt(spent)}
+          ${target>0?`<div class="cat-target">/ ${fmt(target)}</div>`:''}
+        </div>
+      </div>
+    `;
+  }).join('') || '<div class="empty-state">No expenses this week</div>';
+}
+
+// ── RENDER MONTH ──
+function renderMonth() {
+  const monthDates = getMonthDates();
+  const activeExpDays = monthDates.filter(d=>expenses.some(e=>e.date===d));
+  const dayTotals = monthDates.map(d=>({
+    date:d, total:expenses.filter(e=>e.date===d).reduce((s,e)=>s+e.amount,0)
+  })).filter(d=>d.total>0).sort((a,b)=>b.date.localeCompare(a.date));
+
+  const monthTotal = dayTotals.reduce((s,d)=>s+d.total,0);
+  const daysWithSpend = dayTotals.length;
+  const avg = daysWithSpend>0 ? monthTotal/daysWithSpend : 0;
+  const totals = dayTotals.map(d=>d.total);
+  const best = totals.length ? Math.min(...totals) : 0;
+  const worst = totals.length ? Math.max(...totals) : 0;
+
+  document.getElementById('monthTotal').textContent = fmt(monthTotal);
+  document.getElementById('monthAvg').textContent = fmt(avg);
+  document.getElementById('monthBest').textContent = fmt(best);
+  document.getElementById('monthWorst').textContent = fmt(worst);
+
+  const now = new Date();
+  document.getElementById('monthList').innerHTML = dayTotals.map(d=>{
+    const dateObj = new Date(d.date+'T12:00:00');
+    const label = dateObj.toLocaleDateString([],{weekday:'short',day:'numeric',month:'short'});
+    const dayExp = expenses.filter(e=>e.date===d.date).sort((a,b)=>b.ts-a.ts);
+    return `
+      <div class="month-day-group">
+        <div class="month-day-label">
+          <span>${label}</span>
+          <span class="month-day-total">${fmt(d.total)}</span>
+        </div>
+        ${dayExp.map(e=>`
+          <div class="expense-item" style="margin-bottom:5px">
+            <div class="cat-dot" style="background:${CAT_COLORS[e.category]}"></div>
+            <div class="expense-info">
+              <div class="expense-note">${escHtml(e.note)}</div>
+              <div class="expense-meta">${CAT_LABELS[e.category]}</div>
+            </div>
+            <div class="expense-amount">${fmt(e.amount)}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }).join('') || '<div class="empty-state">No expenses this month</div>';
+}
+
+// ── SETTINGS ──
+function loadSettingsUI() {
+  document.getElementById('settingDailyBudget').value = settings.dailyBudget;
+  document.getElementById('settingWeeklyBudget').value = settings.weeklyBudget;
+  Object.keys(settings.targets||{}).forEach(cat=>{
+    const el = document.getElementById('target_'+cat);
+    if (el) el.value = settings.targets[cat];
+  });
+}
+
+function saveSettings() {
+  settings.dailyBudget = parseFloat(document.getElementById('settingDailyBudget').value)||100;
+  settings.weeklyBudget = parseFloat(document.getElementById('settingWeeklyBudget').value)||700;
+  settings.targets = {};
+  ['food','fuel','entertainment','bills','shopping','health','transport','other'].forEach(cat=>{
+    const el = document.getElementById('target_'+cat);
+    if (el) settings.targets[cat] = parseFloat(el.value)||0;
+  });
+  saveLocal();
+  syncSettingsToSheets();
+  renderToday();
+  showToast('Settings saved ✓','success');
+}
+
+// ── GOOGLE SHEETS SYNC ──
+function setSyncStatus(state) {
+  const dot = document.getElementById('syncDot');
+  dot.className = 'sync-dot' + (state==='syncing'?' syncing':state==='error'?' error':'');
+}
+
+async function sheetsSet(key, value) {
+  const url = `${SHEETS_URL}?action=set&key=${encodeURIComponent(key)}&value=${encodeURIComponent(JSON.stringify(value))}`;
+  const res = await fetch(url, {mode:'no-cors'});
+}
+async function sheetsGet(key) {
+  const url = `${SHEETS_URL}?action=get&key=${encodeURIComponent(key)}`;
+  const res = await fetch(url);
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { return null; }
+}
+
+let syncTimer = null;
+function syncToSheets(debounce=false) {
+  if (debounce) {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(()=>_doSync(), 1500);
+  } else {
+    _doSync();
+  }
+}
+
+async function _doSync() {
+  setSyncStatus('syncing');
+  try {
+    await sheetsSet('expenses', expenses);
+    await sheetsSet('expense_settings', settings);
+    const now = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('syncStatus').textContent = 'Last sync: '+now;
+    setSyncStatus('ok');
+  } catch(err) {
+    setSyncStatus('error');
+    document.getElementById('syncStatus').textContent = 'Sync failed';
+  }
+}
+
+async function syncSettingsToSheets() {
+  try { await sheetsSet('expense_settings', settings); } catch {}
+}
+
+async function pullFromSheets() {
+  setSyncStatus('syncing');
+  document.getElementById('syncStatus').textContent = 'Pulling...';
+  try {
+    const remoteExp = await sheetsGet('expenses');
+    const remoteSettings = await sheetsGet('expense_settings');
+    if (Array.isArray(remoteExp)) {
+      expenses = remoteExp;
+      saveLocal();
+    }
+    if (remoteSettings && typeof remoteSettings==='object') {
+      settings = Object.assign(settings, remoteSettings);
+      saveLocal();
+      loadSettingsUI();
+    }
+    renderAll();
+    setSyncStatus('ok');
+    const now = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('syncStatus').textContent = 'Pulled at '+now;
+    showToast('Data pulled from Sheets ✓','success');
+  } catch(err) {
+    setSyncStatus('error');
+    document.getElementById('syncStatus').textContent = 'Pull failed';
+    showToast('Pull failed','error');
+  }
+}
+
+function renderAll() {
+  renderToday();
+}
+
+// ── TOAST ──
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type?' '+type:'');
+  setTimeout(()=>t.className='toast', 2200);
+}
+
+// ── HELPERS ──
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── START ──
+init();
+</script>
+</body>
+</html>
