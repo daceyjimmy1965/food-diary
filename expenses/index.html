@@ -14,7 +14,7 @@
 body{background:var(--bg);color:var(--text);font-family:'Georgia',serif;min-height:100vh;overflow-x:hidden}
 input,button,select{font-family:inherit}
 input::placeholder{color:var(--text3)}
-input:focus,select:focus{outline:none;border-color:var(--accent)!important}
+input:focus{outline:none;border-color:var(--accent)!important}
 .header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 16px 12px;position:sticky;top:0;z-index:20}
 .header-inner{max-width:500px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
 .app-title{font-size:20px;font-weight:bold;color:var(--accent2);letter-spacing:1px}
@@ -23,7 +23,6 @@ input:focus,select:focus{outline:none;border-color:var(--accent)!important}
 .name-bar-inner{max-width:500px;margin:0 auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .name-label{font-size:11px;color:var(--text3);margin-right:2px;white-space:nowrap}
 .name-chip{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--bg);color:var(--text3);font-size:13px;cursor:pointer;transition:all 0.2s;font-weight:bold}
-.name-chip.active{border-color:var(--accent);background:var(--accent);color:#fff}
 .tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border)}
 .tab{flex:1;padding:11px 0;border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:12px;font-weight:bold;border-bottom:2px solid transparent;transition:all 0.2s}
 .tab.active{color:var(--accent2);border-bottom-color:var(--accent)}
@@ -39,26 +38,23 @@ input:focus,select:focus{outline:none;border-color:var(--accent)!important}
 .cat-btn.active{border-color:var(--accent);background:#2a2a45;color:var(--accent2)}
 .expense-card{background:var(--surface);border-radius:10px;padding:11px 13px;margin-bottom:6px;border-left:3px solid var(--accent);display:flex;justify-content:space-between;align-items:center;animation:slideIn 0.2s ease}
 @keyframes slideIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
-.expense-name{font-size:14px;color:var(--text)}
-.expense-meta{font-size:11px;color:var(--text3);margin-top:2px}
-.expense-amount{font-size:16px;font-weight:bold;color:var(--accent2)}
 .remove-btn{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:0 4px;line-height:1;margin-left:8px}
-.person-summary{background:var(--surface);border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid var(--border)}
 .totals-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
 .total-card{background:var(--bg);border-radius:10px;padding:12px;text-align:center;border:1px solid var(--border)}
-.total-amount{font-size:20px;font-weight:bold}
-.total-label{font-size:10px;color:var(--text3);margin-top:3px}
 .sync-ok{background:#0f2a0f;border:1px solid #2a5c2a;border-radius:8px;padding:8px 12px;font-size:12px;color:var(--green);margin:8px 0}
 .sync-err{background:#2a1010;border:1px solid #5c2a2a;border-radius:8px;padding:8px 12px;font-size:12px;color:#e07070;margin:8px 0}
 .empty-state{text-align:center;color:var(--text3);padding:30px 0;font-size:13px}
 .info-text{font-size:11px;color:var(--text3);margin-top:6px;line-height:1.5}
 .settings-card{background:var(--surface);border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid var(--border)}
-.api-input{background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 11px;font-size:13px;width:100%;font-family:monospace}
-
-/* Filter chips */
 .filter-bar{display:flex;gap:5px;flex-wrap:wrap;margin:10px 0 6px}
 .filter-chip{padding:5px 12px;border-radius:16px;border:1px solid var(--border);background:var(--bg);color:var(--text3);font-size:12px;cursor:pointer;transition:all 0.2s;font-weight:bold}
 .filter-chip.active{background:var(--surface2);color:var(--text)}
+.person-goal-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:10px;background:var(--bg);border-radius:10px;border:1px solid var(--border)}
+.person-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.person-goal-name{font-size:14px;font-weight:bold;flex:1}
+.person-goal-input{background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 10px;font-size:14px;width:90px;text-align:right}
+.progress-bar-bg{background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;margin-top:4px}
+.progress-bar-fill{height:100%;border-radius:4px;transition:width 0.4s}
 </style>
 </head>
 <body>
@@ -74,13 +70,18 @@ const CATEGORIES=[
   {icon:'🚌',label:'Transport'},{icon:'📚',label:'Education'},{icon:'💰',label:'Other'},
 ];
 
+// Default individual goals
+const DEFAULT_GOALS={Jess:150,James:150,Billy:100,Zac:100};
+
 let S={
-  expenses:{},activeTab:'add',
+  expenses:{},
+  activeTab:'add',
   selectedPerson:localStorage.getItem('fd-person')||'',
   selectedCategory:'',amount:'',note:'',
-  filterPerson:'All', // NEW: filter for today's log
+  filterPerson:'All',
   syncStatus:'',lastSync:'',
   weeklyBudget:parseFloat(localStorage.getItem('fd-weekly-budget'))||500,
+  personGoals:JSON.parse(localStorage.getItem('fd-person-goals')||JSON.stringify(DEFAULT_GOALS)),
 };
 
 function today(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
@@ -93,18 +94,20 @@ function load(){
   try{
     const e=localStorage.getItem('exp-data');if(e)S.expenses=JSON.parse(e);
     const wb=localStorage.getItem('fd-weekly-budget');if(wb)S.weeklyBudget=parseFloat(wb)||500;
+    const pg=localStorage.getItem('fd-person-goals');if(pg)S.personGoals=JSON.parse(pg);
     const ls=localStorage.getItem('exp-lastsync');if(ls)S.lastSync=ls;
   }catch(e){}
 }
 function saveLocal(){
   try{
     localStorage.setItem('exp-data',JSON.stringify(S.expenses));
+    localStorage.setItem('fd-person-goals',JSON.stringify(S.personGoals));
     if(S.selectedPerson)localStorage.setItem('fd-person',S.selectedPerson);
   }catch(e){}
 }
 async function pushToSheet(){
   try{
-    const data=JSON.stringify({expenses:S.expenses,weeklyBudget:S.weeklyBudget});
+    const data=JSON.stringify({expenses:S.expenses,weeklyBudget:S.weeklyBudget,personGoals:S.personGoals});
     fetch(SHEET_URL+'?action=set&key=family-expenses&value='+encodeURIComponent(data),{mode:'no-cors'});
     S.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
     S.syncStatus='ok';localStorage.setItem('exp-lastsync',S.lastSync);
@@ -119,6 +122,7 @@ async function pullFromSheet(){
       const parsed=JSON.parse(json.value);
       S.expenses=parsed.expenses||{};
       if(parsed.weeklyBudget)S.weeklyBudget=parsed.weeklyBudget;
+      if(parsed.personGoals)S.personGoals=parsed.personGoals;
       S.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
       S.syncStatus='pulled';saveLocal();
     }else{S.syncStatus='empty';}
@@ -145,11 +149,18 @@ function removeExpense(date,id){
 }
 function saveSettings(){
   const wb=document.getElementById('wb-input');
-  if(wb&&wb.value){S.weeklyBudget=parseFloat(wb.value)||500;localStorage.setItem('fd-weekly-budget',String(S.weeklyBudget));}
-  saveAndSync();alert('Settings saved!');render();
+  if(wb&&wb.value)S.weeklyBudget=parseFloat(wb.value)||500;
+  localStorage.setItem('fd-weekly-budget',String(S.weeklyBudget));
+  // Save individual goals
+  PEOPLE.forEach(p=>{
+    const el=document.getElementById('goal-'+p);
+    if(el&&el.value)S.personGoals[p]=parseFloat(el.value)||0;
+  });
+  saveAndSync();
+  alert('Settings saved!');render();
 }
 function exportData(){
-  const d=JSON.stringify({expenses:S.expenses,weeklyBudget:S.weeklyBudget},null,2);
+  const d=JSON.stringify({expenses:S.expenses,weeklyBudget:S.weeklyBudget,personGoals:S.personGoals},null,2);
   const blob=new Blob([d],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download='family-expenses-'+today()+'.json';a.click();
@@ -161,11 +172,25 @@ function bindInputs(){
   if(ni)ni.addEventListener('input',e=>{S.note=e.target.value;});
 }
 
+// ── RENDER HELPERS ──
+function personProgressBar(person, spent){
+  const goal=S.personGoals[person]||0;
+  if(!goal)return'';
+  const pct=Math.min((spent/goal)*100,100);
+  const over=spent>goal;
+  const color=over?'var(--red)':pct>85?'var(--orange)':'var(--green)';
+  return`<div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:3px">
+      <span>${fmtMoney(spent)} of ${fmtMoney(goal)} goal</span>
+      <span style="color:${color}">${over?'▲ '+fmtMoney(spent-goal)+' over':'▼ '+fmtMoney(goal-spent)+' left'}</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+  </div>`;
+}
+
 function renderAdd(){
   const t=today();
   const allTodayExpenses=(S.expenses[t]||[]).slice().reverse();
-
-  // Filter by selected person
   const filtered=S.filterPerson==='All'?allTodayExpenses:allTodayExpenses.filter(e=>e.person===S.filterPerson);
   const filteredTotal=filtered.reduce((s,e)=>s+e.amount,0);
   const allTotal=allTodayExpenses.reduce((s,e)=>s+e.amount,0);
@@ -173,7 +198,6 @@ function renderAdd(){
 
   let h='';
 
-  // Today summary bar
   if(allTodayExpenses.length>0){
     h+=`<div style="background:var(--surface2);border-radius:12px;padding:12px 14px;margin-bottom:8px;border:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -193,7 +217,6 @@ function renderAdd(){
     </div>`;
   }
 
-  // Add form
   h+=`<div class="card">
     <div class="section-label">ADD EXPENSE</div>
     <div style="display:flex;gap:8px;margin-bottom:10px">
@@ -215,14 +238,11 @@ function renderAdd(){
     </button>
   </div>`;
 
-  // Today's log with filter
   h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 6px">
     <div style="font-size:12px;color:var(--text3);font-weight:bold">TODAY'S LOG</div>
     <div style="font-size:12px;color:var(--accent2);font-weight:bold">${fmtMoney(filteredTotal)}</div>
-  </div>`;
-
-  // Filter chips
-  h+=`<div class="filter-bar">
+  </div>
+  <div class="filter-bar">
     <button class="filter-chip ${S.filterPerson==='All'?'active':''}" onclick="S.filterPerson='All';render()" style="${S.filterPerson==='All'?'border-color:var(--accent2);color:var(--accent2)':''}">👥 All</button>
     ${PEOPLE.map(p=>`<button class="filter-chip ${S.filterPerson===p?'active':''}" onclick="S.filterPerson='${p}';render()" style="${S.filterPerson===p?'border-color:'+PERSON_COLORS[p]+';color:'+PERSON_COLORS[p]+';background:'+PERSON_COLORS[p]+'22':''}">
       ${p}
@@ -234,12 +254,12 @@ function renderAdd(){
   }else{
     h+=filtered.map(e=>`<div class="expense-card" style="border-left-color:${PERSON_COLORS[e.person]||'var(--accent)'}">
       <div>
-        <div class="expense-name">${CATEGORIES.find(c=>c.label===e.category)?.icon||'💰'} ${esc(e.category)}${e.note?' — '+esc(e.note):''}</div>
-        <div class="expense-meta" style="color:${PERSON_COLORS[e.person]}">${e.person}</div>
-        <div class="expense-meta">${e.time}</div>
+        <div style="font-size:14px;color:var(--text)">${CATEGORIES.find(c=>c.label===e.category)?.icon||'💰'} ${esc(e.category)}${e.note?' — '+esc(e.note):''}</div>
+        <div style="font-size:11px;color:${PERSON_COLORS[e.person]};margin-top:2px">${e.person}</div>
+        <div style="font-size:11px;color:var(--text3)">${e.time}</div>
       </div>
       <div style="display:flex;align-items:center">
-        <span class="expense-amount">${fmtMoney(e.amount)}</span>
+        <span style="font-size:16px;font-weight:bold;color:var(--accent2)">${fmtMoney(e.amount)}</span>
         <button class="remove-btn" onclick="removeExpense('${t}',${e.id})">×</button>
       </div>
     </div>`).join('');
@@ -278,20 +298,40 @@ function renderSummary(){
         <div style="font-size:12px;color:var(--text3)">${new Date(thisWk+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'})} – ${we.toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div>
         <div style="text-align:right">
           <div style="font-size:28px;font-weight:bold;color:${over?'var(--red)':'var(--accent2)'}">${fmtMoney(w.total)}</div>
-          <div style="font-size:11px;color:var(--text3)">of ${fmtMoney(S.weeklyBudget)} budget</div>
+          <div style="font-size:11px;color:var(--text3)">of ${fmtMoney(S.weeklyBudget)} family budget</div>
         </div>
       </div>
-      <div style="background:var(--surface2);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px">
+      <div style="background:var(--surface2);border-radius:6px;height:8px;overflow:hidden;margin-bottom:16px">
         <div style="width:${pct}%;height:100%;background:${over?'var(--red)':'var(--accent)'};border-radius:6px;transition:width 0.4s"></div>
       </div>
+
       <div class="section-label">BY PERSON</div>
-      <div class="totals-grid">
-        ${PEOPLE.map(p=>`<div class="total-card">
-          <div class="total-amount" style="color:${PERSON_COLORS[p]}">${fmtMoney(w.byPerson[p]||0)}</div>
-          <div class="total-label">${p}</div>
-        </div>`).join('')}
-      </div>
-      <div class="section-label" style="margin-top:10px">TOP CATEGORIES</div>
+      ${PEOPLE.map(p=>{
+        const spent=w.byPerson[p]||0;
+        const goal=S.personGoals[p]||0;
+        const pctP=goal?Math.min((spent/goal)*100,100):0;
+        const overP=goal&&spent>goal;
+        const barColor=overP?'var(--red)':pctP>85?'var(--orange)':PERSON_COLORS[p];
+        return`<div style="margin-bottom:12px;padding:10px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:10px;height:10px;border-radius:50%;background:${PERSON_COLORS[p]}"></div>
+              <span style="font-size:14px;font-weight:bold;color:${PERSON_COLORS[p]}">${p}</span>
+            </div>
+            <div style="text-align:right">
+              <span style="font-size:18px;font-weight:bold;color:${overP?'var(--red)':'var(--text)'}">${fmtMoney(spent)}</span>
+              ${goal?`<span style="font-size:11px;color:var(--text3)"> / ${fmtMoney(goal)}</span>`:''}
+            </div>
+          </div>
+          ${goal?`<div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pctP}%;background:${barColor}"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px">
+            <span>${Math.round(pctP)}% of goal</span>
+            <span style="color:${barColor}">${overP?'▲ '+fmtMoney(spent-goal)+' over':'▼ '+fmtMoney(goal-spent)+' remaining'}</span>
+          </div>`:'<div style="font-size:10px;color:var(--text3)">No goal set</div>'}
+        </div>`;
+      }).join('')}
+
+      <div class="section-label" style="margin-top:4px">TOP CATEGORIES</div>
       ${Object.entries(w.byCategory).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([cat,amt])=>{
         const icon=CATEGORIES.find(c=>c.label===cat)?.icon||'💰';
         const pct2=Math.min((amt/w.total)*100,100);
@@ -325,10 +365,16 @@ function renderSummary(){
         </div>
       </div>
       <div style="display:flex;gap:8px;margin-top:10px">
-        ${PEOPLE.map(p=>`<div style="flex:1;text-align:center">
-          <div style="font-size:13px;font-weight:bold;color:${PERSON_COLORS[p]}">${fmtMoney(w.byPerson[p]||0)}</div>
-          <div style="font-size:10px;color:var(--text3)">${p}</div>
-        </div>`).join('')}
+        ${PEOPLE.map(p=>{
+          const spent=w.byPerson[p]||0;
+          const goal=S.personGoals[p]||0;
+          const overP=goal&&spent>goal;
+          return`<div style="flex:1;text-align:center">
+            <div style="font-size:13px;font-weight:bold;color:${overP?'var(--red)':PERSON_COLORS[p]}">${fmtMoney(spent)}</div>
+            <div style="font-size:10px;color:var(--text3)">${p}</div>
+            ${goal?`<div style="font-size:9px;color:${overP?'var(--red)':'var(--text3)'}">/${fmtMoney(goal)}</div>`:''}
+          </div>`;
+        }).join('')}
       </div>
     </div>`;
   });
@@ -338,13 +384,30 @@ function renderSummary(){
 function renderSettings(){
   return`
     <div class="settings-card" style="margin-top:8px">
-      <div class="section-label">💰 WEEKLY BUDGET</div>
+      <div class="section-label">💰 FAMILY WEEKLY BUDGET</div>
       <div style="display:flex;gap:8px;align-items:center">
         <input id="wb-input" class="input-field" type="number" value="${esc(String(S.weeklyBudget))}" style="flex:1;font-size:18px;font-weight:bold">
-        <button class="btn-small" onclick="saveSettings()">Save</button>
+        <span style="font-size:14px;color:var(--text3)">/week</span>
       </div>
       <div class="info-text">Total family weekly spending target</div>
     </div>
+
+    <div class="settings-card">
+      <div class="section-label">🎯 INDIVIDUAL WEEKLY GOALS</div>
+      <div class="info-text" style="margin-bottom:12px">Set a personal weekly spending limit for each family member. Leave at 0 for no limit.</div>
+      ${PEOPLE.map(p=>`<div class="person-goal-row">
+        <div class="person-dot" style="background:${PERSON_COLORS[p]}"></div>
+        <div class="person-goal-name" style="color:${PERSON_COLORS[p]}">${p}</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:14px;color:var(--text3)">$</span>
+          <input id="goal-${p}" class="person-goal-input" type="number" value="${esc(String(S.personGoals[p]||0))}" placeholder="0">
+          <span style="font-size:12px;color:var(--text3)">/wk</span>
+        </div>
+      </div>`).join('')}
+    </div>
+
+    <button class="btn-primary" style="margin-bottom:10px" onclick="saveSettings()">Save All Settings</button>
+
     <div class="settings-card">
       <div class="section-label">☁️ SYNC</div>
       <div class="info-text" style="margin-bottom:10px">All expenses save to Google Sheets automatically. Pull to load data on a new device.</div>
@@ -353,11 +416,13 @@ function renderSettings(){
       ${S.syncStatus==='ok'?`<div class="sync-ok">✓ Saved to Google Sheets</div>`:''}
       ${S.syncStatus==='blocked'||S.syncStatus==='error'?`<div class="sync-err">⚠️ Could not reach Google Sheets. Data saved locally.</div>`:''}
     </div>
-        <div class="settings-card">
+
+    <div class="settings-card">
       <div class="section-label">💾 BACKUP</div>
       <button class="btn-small" style="width:100%" onclick="exportData()">⬇️ Export All Data (JSON)</button>
       <div class="info-text">Export regularly as a safety backup.</div>
     </div>
+
     <div style="text-align:center;color:var(--text3);font-size:11px;margin-top:20px;padding:10px;line-height:1.8">
       💜 Family Expenses · Dacey Family<br>
       Data stored privately in this browser + Google Sheets
