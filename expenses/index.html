@@ -353,13 +353,7 @@ function renderSettings(){
       ${S.syncStatus==='ok'?`<div class="sync-ok">✓ Saved to Google Sheets</div>`:''}
       ${S.syncStatus==='blocked'||S.syncStatus==='error'?`<div class="sync-err">⚠️ Could not reach Google Sheets. Data saved locally.</div>`:''}
     </div>
-    <div class="settings-card">
-      <div class="section-label">📊 OPENCLAW WEEKLY REPORT</div>
-      <div class="info-text" style="margin-bottom:10px">Send this to your OpenClaw bot for weekly WhatsApp summaries:</div>
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:11px;color:var(--accent2);word-break:break-all;font-family:monospace;margin-bottom:8px">${SHEET_URL}?action=get&key=family-expenses</div>
-      <div class="info-text">Instruction: "Every Sunday at 6pm, fetch the family expense data from the above URL, calculate each person's weekly spending total (Jess, James, Billy, Zac), the family total vs our $${S.weeklyBudget} weekly budget, and the top 3 spending categories. Format it as a friendly WhatsApp message and send to our family group."</div>
-    </div>
-    <div class="settings-card">
+        <div class="settings-card">
       <div class="section-label">💾 BACKUP</div>
       <button class="btn-small" style="width:100%" onclick="exportData()">⬇️ Export All Data (JSON)</button>
       <div class="info-text">Export regularly as a safety backup.</div>
