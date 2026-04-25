@@ -97,8 +97,12 @@ function saveLocal(){
 
 async function pushToSheet(){
   try{
-    const data=JSON.stringify({entries:state.entries,weights:state.weights,goal:state.goal});
-    fetch(SHEET_URL+'?action=set&key=food-diary-data&value='+encodeURIComponent(data),{mode:'no-cors'});
+    // Split into separate small keys to avoid URL length limits
+    const recentEntries={};
+    Object.keys(state.entries).sort().reverse().slice(0,60).forEach(d=>{recentEntries[d]=state.entries[d];});
+    fetch(SHEET_URL+'?action=set&key=fd-entries&value='+encodeURIComponent(JSON.stringify(recentEntries)),{mode:'no-cors'});
+    fetch(SHEET_URL+'?action=set&key=fd-weights&value='+encodeURIComponent(JSON.stringify(state.weights)),{mode:'no-cors'});
+    fetch(SHEET_URL+'?action=set&key=fd-goal&value='+encodeURIComponent(String(state.goal)),{mode:'no-cors'});
     state.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
     state.syncStatus='pushed';
     localStorage.setItem('fd-lastSync',state.lastSync);
@@ -108,18 +112,41 @@ async function pushToSheet(){
 async function pullFromSheet(){
   state.syncStatus='pulling';render();
   try{
-    const res=await fetch(SHEET_URL+'?action=get&key=food-diary-data');
-    const json=await res.json();
-    if(json&&json.value&&json.value!=='null'&&json.value!==null){
-      const parsed=JSON.parse(json.value);
-      state.entries=parsed.entries||{};
-      state.weights=parsed.weights||{};
-      state.goal=parsed.goal||2000;
-      state.goalInput=String(state.goal);
+    const [eRes,wRes,gRes]=await Promise.all([
+      fetch(SHEET_URL+'?action=get&key=fd-entries'),
+      fetch(SHEET_URL+'?action=get&key=fd-weights'),
+      fetch(SHEET_URL+'?action=get&key=fd-goal')
+    ]);
+    const [eJson,wJson,gJson]=await Promise.all([eRes.json(),wRes.json(),gRes.json()]);
+    let loaded=false;
+    if(eJson&&eJson.value&&eJson.value!=='null'){state.entries=JSON.parse(eJson.value);loaded=true;}
+    if(wJson&&wJson.value&&wJson.value!=='null'){state.weights=JSON.parse(wJson.value);loaded=true;}
+    if(gJson&&gJson.value&&gJson.value!=='null'){state.goal=parseInt(gJson.value)||2000;state.goalInput=String(state.goal);loaded=true;}
+    if(loaded){
+      // Also try old single key as fallback
+      if(!eJson||!eJson.value||eJson.value==='null'){
+        const oldRes=await fetch(SHEET_URL+'?action=get&key=food-diary-data');
+        const oldJson=await oldRes.json();
+        if(oldJson&&oldJson.value&&oldJson.value!=='null'){
+          const parsed=JSON.parse(oldJson.value);
+          state.entries=parsed.entries||{};state.weights=parsed.weights||{};
+          if(parsed.goal){state.goal=parsed.goal;state.goalInput=String(state.goal);}
+        }
+      }
       state.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
-      state.syncStatus='pulled';
-      saveLocal();
-    }else{state.syncStatus='empty';}
+      state.syncStatus='pulled';saveLocal();
+    }else{
+      // Fallback to old single key
+      const oldRes=await fetch(SHEET_URL+'?action=get&key=food-diary-data');
+      const oldJson=await oldRes.json();
+      if(oldJson&&oldJson.value&&oldJson.value!=='null'){
+        const parsed=JSON.parse(oldJson.value);
+        state.entries=parsed.entries||{};state.weights=parsed.weights||{};
+        if(parsed.goal){state.goal=parsed.goal;state.goalInput=String(state.goal);}
+        state.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+        state.syncStatus='pulled';saveLocal();
+      }else{state.syncStatus='empty';}
+    }
   }catch(e){state.syncStatus='blocked';}
   render();
 }
@@ -297,10 +324,8 @@ function renderToday(){
 
   html+='<div class="card"><div class="section-label">+ ADD FOOD</div>';
   const isBackdate=state.entryDate&&state.entryDate!==today;
-  html+='<div style="margin-bottom:10px;">';
-  html+='<div style="font-size:11px;color:#4a8c4a;margin-bottom:5px;font-weight:bold;">📅 DATE FOR THIS ENTRY</div>';
-  html+='<div style="display:flex;gap:8px;align-items:center;">';
-  html+='<input id="date-input" type="date" class="date-input" value="'+esc(state.entryDate||today)+'" max="'+today+'" style="flex:1;">';
+  html+='<div style="margin-bottom:10px;"><div style="font-size:11px;color:#4a8c4a;margin-bottom:5px;font-weight:bold;">📅 DATE FOR THIS ENTRY</div>';
+  html+='<div style="display:flex;gap:8px;align-items:center;"><input id="date-input" type="date" class="date-input" value="'+esc(state.entryDate||today)+'" max="'+today+'" style="flex:1;">';
   if(isBackdate)html+='<button style="background:#0f2a1a;border:1px solid #2a5c2a;color:#5ec45e;padding:6px 10px;font-size:11px;border-radius:6px;cursor:pointer;white-space:nowrap;" onclick="state.entryDate=\''+today+'\';render()">Back to Today</button>';
   html+='</div>';
   if(isBackdate)html+='<div class="backdate-banner" style="margin-top:6px;">📅 Adding to <strong>'+formatDate(state.entryDate)+'</strong></div>';
