@@ -78,7 +78,9 @@ let S={
   activeTab:'add',
   selectedPerson:localStorage.getItem('fd-person')||'',
   selectedCategory:'',amount:'',note:'',
+  selectedDate:'',
   filterPerson:'All',
+  personDetail:'',
   syncStatus:'',lastSync:'',
   weeklyBudget:parseFloat(localStorage.getItem('fd-weekly-budget'))||500,
   personGoals:JSON.parse(localStorage.getItem('fd-person-goals')||JSON.stringify(DEFAULT_GOALS)),
@@ -134,11 +136,12 @@ async function saveAndSync(){saveLocal();await pushToSheet();render();}
 function addExpense(){
   if(!S.selectedPerson||!S.selectedCategory||!S.amount)return;
   const amt=parseFloat(S.amount);if(isNaN(amt)||amt<=0)return;
-  const t=today();
+  const dateEl=document.getElementById('date-input');
+  const entryDate=(dateEl&&dateEl.value)?dateEl.value:today();
   const time=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
-  const entry={id:Date.now(),person:S.selectedPerson,category:S.selectedCategory,amount:amt,note:S.note.trim(),time,date:t};
-  if(!S.expenses[t])S.expenses[t]=[];
-  S.expenses[t].push(entry);
+  const entry={id:Date.now(),person:S.selectedPerson,category:S.selectedCategory,amount:amt,note:S.note.trim(),time,date:entryDate};
+  if(!S.expenses[entryDate])S.expenses[entryDate]=[];
+  S.expenses[entryDate].push(entry);
   S.amount='';S.note='';
   saveAndSync();
 }
@@ -170,6 +173,29 @@ function bindInputs(){
   if(ai){ai.addEventListener('input',e=>{S.amount=e.target.value;});ai.addEventListener('keydown',e=>{if(e.key==='Enter')addExpense();});}
   const ni=document.getElementById('note-input');
   if(ni)ni.addEventListener('input',e=>{S.note=e.target.value;});
+  const di=document.getElementById('date-input');
+  if(di)di.addEventListener('change',e=>{S.selectedDate=e.target.value;});
+}
+
+function weeklyPersonCats(person){
+  // Get all expenses for this person in the current week
+  const allDays=Object.keys(S.expenses);
+  const now=new Date();
+  const day=now.getDay();
+  const monOffset=day===0?-6:1-day;
+  const mon=new Date(now);mon.setDate(now.getDate()+monOffset);mon.setHours(0,0,0,0);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
+  const catTotals={};let weekTotal=0;
+  allDays.forEach(date=>{
+    const d=new Date(date+'T00:00:00');
+    if(d>=mon&&d<=sun){
+      (S.expenses[date]||[]).filter(e=>e.person===person).forEach(e=>{
+        catTotals[e.category]=(catTotals[e.category]||0)+e.amount;
+        weekTotal+=e.amount;
+      });
+    }
+  });
+  return{catTotals,weekTotal};
 }
 
 // ── RENDER HELPERS ──
@@ -217,6 +243,7 @@ function renderAdd(){
     </div>`;
   }
 
+  const curDate=S.selectedDate||today();
   h+=`<div class="card">
     <div class="section-label">ADD EXPENSE</div>
     <div style="display:flex;gap:8px;margin-bottom:10px">
@@ -228,6 +255,10 @@ function renderAdd(){
         <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Note (optional)</div>
         <input id="note-input" class="input-field" placeholder="e.g. Woolworths" value="${esc(S.note)}">
       </div>
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Date</div>
+      <input id="date-input" class="input-field" type="date" value="${curDate}" style="font-size:14px;color:var(--text2)">
     </div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Category</div>
     <div class="cat-grid">
@@ -243,11 +274,12 @@ function renderAdd(){
     <div style="font-size:12px;color:var(--accent2);font-weight:bold">${fmtMoney(filteredTotal)}</div>
   </div>
   <div class="filter-bar">
-    <button class="filter-chip ${S.filterPerson==='All'?'active':''}" onclick="S.filterPerson='All';render()" style="${S.filterPerson==='All'?'border-color:var(--accent2);color:var(--accent2)':''}">👥 All</button>
-    ${PEOPLE.map(p=>`<button class="filter-chip ${S.filterPerson===p?'active':''}" onclick="S.filterPerson='${p}';render()" style="${S.filterPerson===p?'border-color:'+PERSON_COLORS[p]+';color:'+PERSON_COLORS[p]+';background:'+PERSON_COLORS[p]+'22':''}">
+    <button class="filter-chip ${S.filterPerson==='All'?'active':''}" onclick="S.filterPerson='All';S.personDetail='';render()" style="${S.filterPerson==='All'?'border-color:var(--accent2);color:var(--accent2)':''}">👥 All</button>
+    ${PEOPLE.map(p=>`<button class="filter-chip ${S.filterPerson===p?'active':''}" onclick="S.filterPerson='${p}';S.personDetail=S.personDetail==='${p}'?'':'${p}';render()" style="${S.filterPerson===p?'border-color:'+PERSON_COLORS[p]+';color:'+PERSON_COLORS[p]+';background:'+PERSON_COLORS[p]+'22':''}">
       ${p}
     </button>`).join('')}
-  </div>`;
+  </div>
+  ${S.personDetail?renderPersonWeekDetail(S.personDetail):''}`;
 
   if(filtered.length===0){
     h+=`<div class="empty-state">${S.filterPerson==='All'?'No expenses logged today yet!':'No expenses from '+S.filterPerson+' today.'}</div>`;
@@ -429,6 +461,48 @@ function renderSettings(){
     </div>`;
 }
 
+function renderPersonWeekDetail(person){
+  const {catTotals,weekTotal}=weeklyPersonCats(person);
+  const goal=S.personGoals[person]||0;
+  const color=PERSON_COLORS[person];
+  const cats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+  if(!cats.length)return`<div style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:8px;border:1px solid var(--border);border-top:3px solid ${color}">
+    <div style="font-size:12px;color:${color};font-weight:bold;margin-bottom:6px">${person} — This Week</div>
+    <div style="font-size:12px;color:var(--text3)">No spending this week yet.</div>
+  </div>`;
+  let h=`<div style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:8px;border:1px solid var(--border);border-top:3px solid ${color}">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:13px;color:${color};font-weight:bold">${person} — This Week</div>
+      <div style="font-size:18px;font-weight:bold;color:var(--text)">${fmtMoney(weekTotal)}${goal?`<span style="font-size:11px;color:var(--text3)"> / ${fmtMoney(goal)}</span>`:''}</div>
+    </div>`;
+  if(goal){
+    const pct=Math.min((weekTotal/goal)*100,100);
+    const over=weekTotal>goal;
+    const barCol=over?'var(--red)':pct>85?'var(--orange)':color;
+    h+=`<div style="background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;margin-bottom:12px">
+      <div style="width:${pct}%;height:100%;background:${barCol};border-radius:4px;transition:width 0.4s"></div>
+    </div>`;
+  }
+  h+=cats.map(([cat,amt])=>{
+    const icon=CATEGORIES.find(c=>c.label===cat)?.icon||'💰';
+    const pct2=weekTotal>0?Math.min((amt/weekTotal)*100,100):0;
+    return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="width:28px;text-align:center;font-size:16px">${icon}</div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+          <span style="color:var(--text2)">${cat}</span>
+          <span style="color:var(--accent2);font-weight:bold">${fmtMoney(amt)}</span>
+        </div>
+        <div style="background:var(--surface2);border-radius:3px;height:4px;overflow:hidden">
+          <div style="width:${pct2}%;height:100%;background:${color};border-radius:3px"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  h+=`</div>`;
+  return h;
+}
+
 function render(){
   const syncDot=S.syncStatus==='ok'?` <span style="color:var(--green);font-size:10px">✓</span>`:S.syncStatus==='error'?` <span style="color:var(--red);font-size:10px">⚠</span>`:'';
   const header=`<div class="header"><div class="header-inner">
@@ -452,7 +526,7 @@ function render(){
   bindInputs();
 }
 
-load();render();
+S.selectedDate=today();load();render();
 </script>
 </body>
 </html>
