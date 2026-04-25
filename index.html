@@ -98,7 +98,7 @@ function saveLocal(){
 async function pushToSheet(){
   try{
     const data=JSON.stringify({entries:state.entries,weights:state.weights,goal:state.goal});
-    fetch(SHEET_URL+'?action=set&key=food-diary-data&value='+encodeURIComponent(data));
+    fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'food-diary-data',value:data})});
     state.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
     state.syncStatus='pushed';
     localStorage.setItem('fd-lastSync',state.lastSync);
