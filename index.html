@@ -13,36 +13,36 @@ input:focus,textarea:focus{outline:none;border-color:#5ec45e!important}
 .header{background:#162216;border-bottom:1px solid #2a3d2a;padding:16px 20px 12px}
 .header-inner{max-width:480px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
 .title{font-size:21px;font-weight:bold;color:#7ec87e;letter-spacing:1px}
-.subtitle{font-size:11px;color:#3a5e3a;margin-top:1px;display:flex;gap:6px;align-items:center}
-.goal-display{cursor:pointer;color:#4a8c4a;font-size:12px}
+.subtitle{font-size:12px;color:#a8e8a8;margin-top:1px;display:flex;gap:6px;align-items:center}
+.goal-display{cursor:pointer;color:#a8e8a8;font-size:13px}
 .container{max-width:480px;margin:0 auto;padding:0 14px 80px}
 .tabs{display:flex;margin:14px 0 0;background:#162216;border-radius:10px;padding:4px;gap:3px}
-.tab{flex:1;background:transparent;color:#4a8c4a;border:none;border-radius:7px;padding:9px 0;cursor:pointer;font-weight:bold;font-size:12px;transition:all 0.2s}
+.tab{flex:1;background:transparent;color:#a8e8a8;border:none;border-radius:7px;padding:10px 0;cursor:pointer;font-weight:bold;font-size:13px;transition:all 0.2s}
 .tab.active{background:#5ec45e;color:#0f1a0f}
 .card{background:#162216;border-radius:14px;padding:14px;margin:10px 0}
 .section-label{font-size:13px;color:#a8e8a8;margin-bottom:8px;font-weight:bold}
 .input-field{background:#2a4a2a;border:2px solid #7ec87e;border-radius:8px;color:#ffffff;padding:11px 12px;font-size:16px;width:100%}
 .btn{border:none;border-radius:8px;padding:11px 16px;font-weight:bold;font-size:15px;cursor:pointer}
 .btn-primary{background:#5ec45e;color:#0f1a0f}
-.btn-primary:disabled{background:#2a3d2a;color:#3a5e3a;cursor:not-allowed}
-.btn-secondary{background:#1a3d2a;border:1px solid #2a6e3a;color:#5ec45e;font-size:12px;padding:10px 11px;font-weight:bold;white-space:nowrap;border-radius:8px;cursor:pointer}
+.btn-primary:disabled{background:#2a3d2a;color:#8cc88c;cursor:not-allowed}
+.btn-secondary{background:#2a5c2a;border:2px solid #7ec87e;color:#ffffff;font-size:13px;padding:10px 11px;font-weight:bold;white-space:nowrap;border-radius:8px;cursor:pointer}
 .btn-secondary:disabled{opacity:0.5;cursor:not-allowed}
 .btn-small{background:#1a3a1a;border:1px solid #5a8c5a;color:#a8e8a8;padding:10px 12px;font-size:13px;border-radius:8px;cursor:pointer}
 .entry-card{background:#162216;border-radius:10px;padding:11px 13px;margin-bottom:6px;border-left:3px solid #2a5c2a;display:flex;justify-content:space-between;align-items:center}
 .entry-name{font-size:14px;color:#e8f0e8}
-.entry-meta{font-size:11px;color:#3a5e3a;margin-top:1px}
+.entry-meta{font-size:12px;color:#8cc88c;margin-top:1px}
 .entry-cal{font-size:15px;font-weight:bold;color:#7ec87e}
-.remove-btn{background:none;border:none;color:#3a4e3a;font-size:18px;cursor:pointer;margin-left:9px}
+.remove-btn{background:none;border:none;color:#7ec87e;font-size:18px;cursor:pointer;margin-left:9px}
 .lookup-result{background:#0f2a1a;border:1px solid #2a5c2a;border-radius:8px;padding:9px 11px;margin-bottom:9px;font-size:13px}
 .lookup-error{background:#2a1010;border:1px solid #5c2a2a;border-radius:8px;padding:9px 11px;margin-bottom:9px;font-size:13px;color:#e07070}
-.empty-state{text-align:center;color:#2a3d2a;padding:30px 0;font-size:13px}
+.empty-state{text-align:center;color:#7ec87e;padding:30px 0;font-size:13px}
 .ring-card{display:flex;align-items:center;gap:18px;padding:18px 16px}
 .macro-bar-container{flex:1}
-.macro-bar-label{display:flex;justify-content:space-between;font-size:10px;color:#4a6e4a;margin-bottom:3px}
+.macro-bar-label{display:flex;justify-content:space-between;font-size:11px;color:#a8e8a8;margin-bottom:3px}
 .macro-bar-bg{background:#1e2e1e;border-radius:4px;height:5px;overflow:hidden}
 .macro-bar-fill{height:100%;border-radius:4px;transition:width 0.4s}
 .unit-toggle{display:flex;border-radius:8px;overflow:hidden;border:1px solid #2a3d2a}
-.unit-btn{background:#0f1a0f;color:#3a5e3a;border:none;padding:0 14px;cursor:pointer;font-size:13px;font-weight:bold}
+.unit-btn{background:#0f1a0f;color:#8cc88c;border:none;padding:0 14px;cursor:pointer;font-size:13px;font-weight:bold}
 .unit-btn.active{background:#2a5c2a;color:#7ec87e}
 .settings-section{background:#162216;border-radius:12px;padding:14px;margin-bottom:10px}
 .api-key-input{background:#2a4a2a;border:2px solid #7ec87e;border-radius:8px;color:#ffffff;padding:11px 12px;font-size:15px;width:100%;font-family:monospace}
@@ -328,7 +328,7 @@ function bindInputs(){
 
 function renderMacroBar(label,val,goal,color){
   const pct=Math.min((val/goal)*100,100);
-  return '<div class="macro-bar-container"><div class="macro-bar-label"><span>'+label+'</span><span style="color:'+color+';">'+val+'g</span></div><div class="macro-bar-bg"><div class="macro-bar-fill" style="width:'+pct+'%;background:'+color+';"></div></div><div style="font-size:9px;color:#2a4a2a;margin-top:2px;">'+goal+'g goal</div></div>';
+  return '<div class="macro-bar-container"><div class="macro-bar-label"><span>'+label+'</span><span style="color:'+color+';">'+val+'g</span></div><div class="macro-bar-bg"><div class="macro-bar-fill" style="width:'+pct+'%;background:'+color+';"></div></div><div style="font-size:9px;color:#7ec87e;margin-top:2px;">'+goal+'g goal</div></div>';
 }
 
 function renderSyncBanner(){
@@ -360,16 +360,16 @@ function renderToday(){
   const lookupDisabled=state.lookupStatus==='loading'||!state.foodName.trim();
 
   let html=renderSyncBanner();
-  html+='<div class="card ring-card"><svg width="86" height="86" viewBox="0 0 90 90"><circle cx="45" cy="45" r="38" fill="none" stroke="#1e2e1e" stroke-width="10"/><circle cx="45" cy="45" r="38" fill="none" stroke="'+rc+'" stroke-width="10" stroke-dasharray="'+(2*Math.PI*38)+'" stroke-dashoffset="'+(2*Math.PI*38*(1-pct/100))+'" stroke-linecap="round" transform="rotate(-90 45 45)"/><text x="45" y="43" text-anchor="middle" fill="#e8f0e8" font-size="15" font-weight="bold" font-family="Georgia">'+tCal.toLocaleString()+'</text><text x="45" y="57" text-anchor="middle" fill="#4a6e4a" font-size="10" font-family="Georgia">cal eaten</text></svg>';
-  html+='<div style="flex:1;"><div style="font-size:12px;color:#4a8c4a;">'+formatDate(today)+'</div><div style="margin-top:4px;"><span style="font-size:26px;font-weight:bold;color:'+rc+';">'+Math.abs(rem).toLocaleString()+'</span><span style="font-size:12px;color:#4a6e4a;margin-left:6px;">'+(rem>=0?'cal remaining':'cal over')+'</span></div><div style="background:#1e2e1e;border-radius:6px;height:5px;margin-top:8px;overflow:hidden;"><div style="width:'+pct+'%;height:100%;background:'+rc+';border-radius:6px;"></div></div>';
-  if(tw)html+='<div style="margin-top:8px;font-size:12px;color:#4a8c4a;">⚖️ '+tw.value+' '+tw.unit+(diff?' <span style="color:'+(parseFloat(diff)>0?'#e09b30':'#5ec45e')+';margin-left:8px;">'+(parseFloat(diff)>0?'▲':'▼')+' '+Math.abs(diff)+tw.unit+'</span>':'')+'</div>';
+  html+='<div class="card ring-card"><svg width="86" height="86" viewBox="0 0 90 90"><circle cx="45" cy="45" r="38" fill="none" stroke="#1e2e1e" stroke-width="10"/><circle cx="45" cy="45" r="38" fill="none" stroke="'+rc+'" stroke-width="10" stroke-dasharray="'+(2*Math.PI*38)+'" stroke-dashoffset="'+(2*Math.PI*38*(1-pct/100))+'" stroke-linecap="round" transform="rotate(-90 45 45)"/><text x="45" y="43" text-anchor="middle" fill="#e8f0e8" font-size="15" font-weight="bold" font-family="Georgia">'+tCal.toLocaleString()+'</text><text x="45" y="57" text-anchor="middle" fill="#a8e8a8" font-size="11" font-family="Georgia">cal eaten</text></svg>';
+  html+='<div style="flex:1;"><div style="font-size:12px;color:#a8e8a8;">'+formatDate(today)+'</div><div style="margin-top:4px;"><span style="font-size:26px;font-weight:bold;color:'+rc+';">'+Math.abs(rem).toLocaleString()+'</span><span style="font-size:12px;color:#8cc88c;margin-left:6px;">'+(rem>=0?'cal remaining':'cal over')+'</span></div><div style="background:#1e2e1e;border-radius:6px;height:5px;margin-top:8px;overflow:hidden;"><div style="width:'+pct+'%;height:100%;background:'+rc+';border-radius:6px;"></div></div>';
+  if(tw)html+='<div style="margin-top:8px;font-size:12px;color:#a8e8a8;">⚖️ '+tw.value+' '+tw.unit+(diff?' <span style="color:'+(parseFloat(diff)>0?'#e09b30':'#5ec45e')+';margin-left:8px;">'+(parseFloat(diff)>0?'▲':'▼')+' '+Math.abs(diff)+tw.unit+'</span>':'')+'</div>';
   html+='</div></div>';
 
-  if(te.length>0)html+='<div class="card" style="padding:14px 15px;"><div style="font-size:11px;color:#4a8c4a;font-weight:bold;margin-bottom:10px;">TODAY\'S MACROS</div><div style="display:flex;gap:12px;">'+renderMacroBar('Protein',tP,MG.protein,'#5ec45e')+renderMacroBar('Carbs',tC,MG.carbs,'#e09b30')+renderMacroBar('Fat',tF,MG.fat,'#e05585')+'</div></div>';
+  if(te.length>0)html+='<div class="card" style="padding:14px 15px;"><div style="font-size:11px;color:#a8e8a8;font-weight:bold;margin-bottom:10px;">TODAY\'S MACROS</div><div style="display:flex;gap:12px;">'+renderMacroBar('Protein',tP,MG.protein,'#5ec45e')+renderMacroBar('Carbs',tC,MG.carbs,'#e09b30')+renderMacroBar('Fat',tF,MG.fat,'#e05585')+'</div></div>';
 
   html+='<div class="card"><div class="section-label">+ ADD FOOD</div>';
   const isBackdate=state.entryDate&&state.entryDate!==today;
-  html+='<div style="margin-bottom:10px;"><div style="font-size:11px;color:#4a8c4a;margin-bottom:5px;font-weight:bold;">📅 DATE FOR THIS ENTRY</div>';
+  html+='<div style="margin-bottom:10px;"><div style="font-size:11px;color:#a8e8a8;margin-bottom:5px;font-weight:bold;">📅 DATE FOR THIS ENTRY</div>';
   html+='<div style="display:flex;gap:8px;align-items:center;"><input id="date-input" type="date" class="date-input" value="'+esc(state.entryDate||today)+'" max="'+today+'" style="flex:1;">';
   if(isBackdate)html+='<button style="background:#0f2a1a;border:1px solid #2a5c2a;color:#5ec45e;padding:6px 10px;font-size:11px;border-radius:6px;cursor:pointer;white-space:nowrap;" onclick="state.entryDate=\''+today+'\';render()">Back to Today</button>';
   html+='</div>';
@@ -383,7 +383,7 @@ function renderToday(){
   // Recent foods pill row — tap to instantly re-lookup from cache
   const recentKeys=Object.keys(state.lookupCache).slice(-8).reverse();
   if(recentKeys.length>0){
-    html+='<div style="margin-bottom:9px;"><div style="font-size:10px;color:#4a8c4a;margin-bottom:5px;font-weight:bold;">⚡ RECENT (tap to re-add)</div>';
+    html+='<div style="margin-bottom:9px;"><div style="font-size:10px;color:#a8e8a8;margin-bottom:5px;font-weight:bold;">⚡ RECENT (tap to re-add)</div>';
     html+='<div style="display:flex;flex-wrap:wrap;gap:5px;">';
     recentKeys.forEach(k=>{
       const label=k.length>28?k.slice(0,26)+'…':k;
@@ -392,7 +392,7 @@ function renderToday(){
     html+='</div></div>';
   }
 
-  if(state.lookupStatus==='done')html+='<div class="lookup-result"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="color:#7ec87e;">Found: <strong>'+state.calories+' cal</strong> · P:'+state.protein+'g · C:'+state.carbs+'g · F:'+state.fat+'g</span>'+(state.fromCache?'<span style="color:#5ec45e;font-size:11px;background:#0f2a1a;border:1px solid #2a5c2a;border-radius:4px;padding:2px 6px;">⚡ Cached</span>':(badges[state.lookupConfidence]||''))+'</div>'+(state.lookupNote?'<div style="color:#4a7e5a;margin-top:3px;font-size:12px;"><strong>Assumptions:</strong> '+esc(state.lookupNote)+'</div>':'')+'</div>';
+  if(state.lookupStatus==='done')html+='<div class="lookup-result"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="color:#7ec87e;">Found: <strong>'+state.calories+' cal</strong> · P:'+state.protein+'g · C:'+state.carbs+'g · F:'+state.fat+'g</span>'+(state.fromCache?'<span style="color:#5ec45e;font-size:11px;background:#0f2a1a;border:1px solid #2a5c2a;border-radius:4px;padding:2px 6px;">⚡ Cached</span>':(badges[state.lookupConfidence]||''))+'</div>'+(state.lookupNote?'<div style="color:#a8e8a8;margin-top:3px;font-size:12px;"><strong>Assumptions:</strong> '+esc(state.lookupNote)+'</div>':'')+'</div>';
   if(state.lookupStatus==='error')html+='<div class="lookup-error">'+esc(state.lookupNote)+'</div>';
 
   html+='<div style="display:flex;gap:7px;margin-bottom:'+(state.showMacros?'7px':'0')+';"><input id="calories-input" class="input-field" type="number" placeholder="Calories" value="'+esc(state.calories)+'" style="flex:1;"><button class="btn-small" onclick="state.showMacros=!state.showMacros;render();">'+(state.showMacros?'▲':'▼')+' Macros</button></div>';
@@ -410,7 +410,7 @@ function renderWeight(){
   let html='<div class="card" style="padding:16px;margin-top:12px;"><div class="section-label">⚖️ LOG TODAY\'S WEIGHT</div><div style="display:flex;gap:8px;margin-bottom:8px;"><input id="weight-input" class="input-field" type="number" step="0.1" placeholder="Weight in '+state.weightUnit+'" value="'+esc(state.weightInput)+'" style="flex:1;"><div class="unit-toggle"><button class="unit-btn '+(state.weightUnit==='kg'?'active':'')+'" onclick="state.weightUnit=\'kg\';saveLocal();render();">kg</button><button class="unit-btn '+(state.weightUnit==='lbs'?'active':'')+'" onclick="state.weightUnit=\'lbs\';saveLocal();render();">lbs</button></div></div><button class="btn btn-primary" style="width:100%;" onclick="logWeight()"'+(!state.weightInput?' disabled':'')+'>Save Weight</button></div>';
   if(wd.length>1){const r=wd.slice(0,14).reverse();const v=r.map(d=>state.weights[d].value);const mn=Math.min(...v)-1,mx=Math.max(...v)+1,rg=mx-mn||1;html+='<div class="card" style="padding:16px;margin-bottom:12px;"><div class="section-label">TREND</div><div style="display:flex;align-items:flex-end;gap:4px;height:80px;">';r.forEach((d,i)=>{const h=((v[i]-mn)/rg)*70+10;const il=i===r.length-1;html+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;"><div style="font-size:9px;color:'+(il?'#7ec87e':'#2a4a2a')+';">'+v[i]+'</div><div style="width:100%;height:'+h+'px;background:'+(il?'#5ec45e':'#2a5c2a')+';border-radius:3px 3px 0 0;"></div></div>';});html+='</div></div>';}
   if(wd.length===0)html+='<div class="empty-state">No weight entries yet!</div>';
-  else html+=wd.map(date=>'<div class="entry-card" style="border-left-color:#1a4c2a;"><div style="font-size:13px;color:#7ec87e;">'+formatDate(date)+(date===today?' — Today':'')+'</div><div style="display:flex;align-items:center;gap:10px;"><span style="font-size:18px;font-weight:bold;color:#e8f0e8;">'+state.weights[date].value+' <span style="font-size:12px;color:#4a6e4a;">'+state.weights[date].unit+'</span></span><button class="remove-btn" onclick="removeWeight(\''+date+'\')">×</button></div></div>').join('');
+  else html+=wd.map(date=>'<div class="entry-card" style="border-left-color:#1a4c2a;"><div style="font-size:13px;color:#7ec87e;">'+formatDate(date)+(date===today?' — Today':'')+'</div><div style="display:flex;align-items:center;gap:10px;"><span style="font-size:18px;font-weight:bold;color:#e8f0e8;">'+state.weights[date].value+' <span style="font-size:12px;color:#8cc88c;">'+state.weights[date].unit+'</span></span><button class="remove-btn" onclick="removeWeight(\''+date+'\')">×</button></div></div>').join('');
   return html;
 }
 
@@ -420,11 +420,11 @@ function renderHistory(){
   const wk=Object.keys(ws).sort().reverse().slice(0,8);
   if(wk.length===0)return '<div class="empty-state" style="padding:40px 0;">No history yet!</div>';
   return wk.map(w=>{const{days,tc,tp,tcar,tf,c}=ws[w];const avg=Math.round(tc/c);const ov=avg>state.goal;const we=new Date(w+'T00:00:00');we.setDate(we.getDate()+6);
-    let h='<div class="card" style="padding:14px 15px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;"><div><div style="font-size:13px;color:#7ec87e;font-weight:bold;">'+new Date(w+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'})+' – '+we.toLocaleDateString('en-AU',{day:'numeric',month:'short'})+'</div><div style="font-size:11px;color:#3a5e3a;margin-top:2px;">'+c+' day'+(c!==1?'s':'')+' logged</div></div><div style="text-align:right;"><div style="font-size:11px;color:#3a5e3a;">Daily avg</div><div style="font-size:20px;font-weight:bold;color:'+(ov?'#e05555':'#5ec45e')+';">'+avg.toLocaleString()+'</div><div style="font-size:10px;color:#3a5e3a;">cal</div></div></div>';
+    let h='<div class="card" style="padding:14px 15px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;"><div><div style="font-size:13px;color:#7ec87e;font-weight:bold;">'+new Date(w+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'})+' – '+we.toLocaleDateString('en-AU',{day:'numeric',month:'short'})+'</div><div style="font-size:11px;color:#8cc88c;margin-top:2px;">'+c+' day'+(c!==1?'s':'')+' logged</div></div><div style="text-align:right;"><div style="font-size:11px;color:#8cc88c;">Daily avg</div><div style="font-size:20px;font-weight:bold;color:'+(ov?'#e05555':'#5ec45e')+';">'+avg.toLocaleString()+'</div><div style="font-size:10px;color:#8cc88c;">cal</div></div></div>';
     h+='<div style="display:flex;gap:4px;align-items:flex-end;height:48px;margin-bottom:10px;">';
-    days.sort((a,b)=>a.date.localeCompare(b.date)).forEach(({date,total})=>{const hh=Math.max((total/(state.goal*1.5))*44,3);h+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="font-size:8px;color:'+(total>state.goal?'#e05555':'#3a6e3a')+';">'+(total>0?total:'')+'</div><div style="width:100%;height:'+hh+'px;background:'+(date===today?'#7ec87e':total>state.goal?'#8c3535':'#2a5c2a')+';border-radius:2px 2px 0 0;"></div><div style="font-size:8px;color:#2a4a2a;">'+new Date(date+'T00:00:00').toLocaleDateString('en-AU',{weekday:'narrow'})+'</div></div>';});
+    days.sort((a,b)=>a.date.localeCompare(b.date)).forEach(({date,total})=>{const hh=Math.max((total/(state.goal*1.5))*44,3);h+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="font-size:8px;color:'+(total>state.goal?'#e05555':'#3a6e3a')+';">'+(total>0?total:'')+'</div><div style="width:100%;height:'+hh+'px;background:'+(date===today?'#7ec87e':total>state.goal?'#8c3535':'#2a5c2a')+';border-radius:2px 2px 0 0;"></div><div style="font-size:8px;color:#7ec87e;">'+new Date(date+'T00:00:00').toLocaleDateString('en-AU',{weekday:'narrow'})+'</div></div>';});
     h+='</div><div style="display:flex;gap:10px;margin-bottom:10px;">'+renderMacroBar('Avg Protein',Math.round(tp/c),MG.protein,'#5ec45e')+renderMacroBar('Avg Carbs',Math.round(tcar/c),MG.carbs,'#e09b30')+renderMacroBar('Avg Fat',Math.round(tf/c),MG.fat,'#e05585')+'</div>';
-    h+='<div style="display:flex;justify-content:space-between;font-size:11px;color:#3a5e3a;border-top:1px solid #1a2e1a;padding-top:8px;"><span>Total: <strong style="color:#7ec87e;">'+tc.toLocaleString()+' cal</strong></span><span style="color:'+(ov?'#e05555':'#5ec45e')+';">'+(ov?'▲ '+(avg-state.goal).toLocaleString()+' over':'▼ '+(state.goal-avg).toLocaleString()+' under')+'</span></div></div>';
+    h+='<div style="display:flex;justify-content:space-between;font-size:11px;color:#8cc88c;border-top:1px solid #1a2e1a;padding-top:8px;"><span>Total: <strong style="color:#7ec87e;">'+tc.toLocaleString()+' cal</strong></span><span style="color:'+(ov?'#e05555':'#5ec45e')+';">'+(ov?'▲ '+(avg-state.goal).toLocaleString()+' over':'▼ '+(state.goal-avg).toLocaleString()+' under')+'</span></div></div>';
     return h;}).join('');
 }
 
@@ -449,14 +449,14 @@ function renderSettings(){
     +'<div class="info-text">Export on one device, import on another to sync manually.</div></div>'
     +'<div class="settings-section"><div class="section-label">🎯 DAILY CALORIE GOAL</div>'
     +'<div style="display:flex;gap:8px;align-items:center;"><input id="goal-input" class="input-field" type="number" value="'+esc(state.goalInput)+'" style="flex:1;"><button class="btn-small" onclick="saveGoal()">Save</button></div></div>'
-    +'<div style="text-align:center;color:#2a4a2a;font-size:11px;margin-top:20px;padding:10px;">🌿 Food Diary · made for Jimmy</div>';
+    +'<div style="text-align:center;color:#7ec87e;font-size:11px;margin-top:20px;padding:10px;">🌿 Food Diary · made for Jimmy</div>';
 }
 
 function render(){
   const tabs=['today','weight','history','settings'];
   const labels={today:'📋 Today',weight:'⚖️ Weight',history:'📅 Summary',settings:'⚙️ Settings'};
   const content=state.activeTab==='today'?renderToday():state.activeTab==='weight'?renderWeight():state.activeTab==='history'?renderHistory():renderSettings();
-  const syncDot=state.syncStatus==='pushed'?' <span style="color:#2a5c2a;font-size:10px;">✓ saved</span>':state.syncStatus==='error'?' <span style="color:#e05555;font-size:10px;">⚠ error</span>':'';
+  const syncDot=state.syncStatus==='pushed'?' <span style="color:#8cc88c;font-size:10px;">✓ saved</span>':state.syncStatus==='error'?' <span style="color:#e05555;font-size:10px;">⚠ error</span>':'';
   let header='<div class="header"><div class="header-inner"><div><div class="title">🌿 Food Diary</div><div class="subtitle">Jimmy\'s daily tracker'+syncDot+'</div></div><div>';
   if(state.editGoal)header+='<div style="display:flex;gap:6px;align-items:center;"><input class="input-field" type="number" value="'+esc(state.goalInput)+'" style="width:68px;padding:4px 6px;border-color:#5ec45e;" oninput="state.goalInput=this.value;"><button class="btn-primary" style="padding:4px 10px;font-size:14px;border:none;border-radius:6px;cursor:pointer;" onclick="saveGoal()">✓</button></div>';
   else header+='<div class="goal-display" onclick="state.editGoal=true;render();">Goal: <span style="color:#7ec87e;">'+state.goal.toLocaleString()+' cal</span> ✏️</div>';
