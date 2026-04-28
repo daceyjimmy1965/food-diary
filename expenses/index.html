@@ -113,12 +113,9 @@ function saveLocal(){
 async function pushToSheet(){
   try{
     const data=JSON.stringify({expenses:S.expenses,weeklyBudget:S.weeklyBudget,personGoals:S.personGoals});
-    const res=await fetch(SHEET_URL+'?action=set&key=family-expenses&value='+encodeURIComponent(data));
-    const json=await res.json();
-    if(json&&json.success){
-      S.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
-      S.syncStatus='ok';localStorage.setItem('exp-lastsync',S.lastSync);
-    } else { S.syncStatus='error'; }
+    fetch(SHEET_URL+'?action=set&key=family-expenses&value='+encodeURIComponent(data),{mode:'no-cors'});
+    S.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+    S.syncStatus='ok';localStorage.setItem('exp-lastsync',S.lastSync);
   }catch(e){S.syncStatus='error';}
 }
 async function pullFromSheet(){
