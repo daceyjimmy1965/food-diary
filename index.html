@@ -216,6 +216,14 @@ async function lookupNutrition(description){
   return result;
 }
 
+async function pickRecentFood(key){
+  state.foodName=key;
+  state.lookupStatus='';state.lookupNote='';state.fromCache=false;
+  state.calories='';state.protein='';state.carbs='';state.fat='';
+  render();
+  await handleLookup();
+}
+
 async function handleLookup(){
   const name=state.foodName.trim();
   if(!name)return;
@@ -229,7 +237,7 @@ async function handleLookup(){
       state.protein=String(r.protein||'');
       state.carbs=String(r.carbs||'');
       state.fat=String(r.fat||'');
-      state.foodName=r.description||name;
+      // Keep user's typed text intact so cache key stays consistent on re-lookup
       state.lookupNote=r.note||'';
       state.lookupConfidence=r.confidence||'';
       state.fromCache=!!r._fromCache;
@@ -371,6 +379,18 @@ function renderToday(){
   html+='<input id="food-name-input" class="input-field" placeholder="e.g. 2 Weet-Bix with full cream milk" value="'+esc(state.foodName)+'" style="flex:1;">';
   html+='<button id="lookup-btn" class="btn-secondary" onclick="handleLookup()"'+(lookupDisabled?' disabled':'')+'>'+(state.lookupStatus==='loading'?'🔍…':'🤖 Look Up')+'</button>';
   html+='</div>';
+
+  // Recent foods pill row — tap to instantly re-lookup from cache
+  const recentKeys=Object.keys(state.lookupCache).slice(-8).reverse();
+  if(recentKeys.length>0){
+    html+='<div style="margin-bottom:9px;"><div style="font-size:10px;color:#4a8c4a;margin-bottom:5px;font-weight:bold;">⚡ RECENT (tap to re-add)</div>';
+    html+='<div style="display:flex;flex-wrap:wrap;gap:5px;">';
+    recentKeys.forEach(k=>{
+      const label=k.length>28?k.slice(0,26)+'…':k;
+      html+='<button class="btn-small" style="font-size:11px;padding:5px 9px;background:#0f2a1a;border:1px solid #2a5c2a;color:#7ec87e;" onclick="pickRecentFood(\''+esc(k).replace(/'/g,"\\'")+'\')">'+esc(label)+'</button>';
+    });
+    html+='</div></div>';
+  }
 
   if(state.lookupStatus==='done')html+='<div class="lookup-result"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="color:#7ec87e;">Found: <strong>'+state.calories+' cal</strong> · P:'+state.protein+'g · C:'+state.carbs+'g · F:'+state.fat+'g</span>'+(state.fromCache?'<span style="color:#5ec45e;font-size:11px;background:#0f2a1a;border:1px solid #2a5c2a;border-radius:4px;padding:2px 6px;">⚡ Cached</span>':(badges[state.lookupConfidence]||''))+'</div>'+(state.lookupNote?'<div style="color:#4a7e5a;margin-top:3px;font-size:12px;"><strong>Assumptions:</strong> '+esc(state.lookupNote)+'</div>':'')+'</div>';
   if(state.lookupStatus==='error')html+='<div class="lookup-error">'+esc(state.lookupNote)+'</div>';
