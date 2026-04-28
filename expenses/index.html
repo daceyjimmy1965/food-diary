@@ -402,19 +402,33 @@ function renderSummary(){
         return html;
       }).join('')}
 
-      <div class="section-label" style="margin-top:4px">TOP CATEGORIES</div>
-      ${Object.entries(w.byCategory).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([cat,amt])=>{
-        const icon=CATEGORIES.find(c=>c.label===cat)?.icon||'💰';
-        const pct2=Math.min((amt/w.total)*100,100);
-        return`<div style="margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
-            <span>${icon} ${cat}</span><span style="color:var(--accent2);font-weight:bold">${fmtMoney(amt)}</span>
-          </div>
-          <div style="background:var(--surface2);border-radius:4px;height:4px;overflow:hidden">
-            <div style="width:${pct2}%;height:100%;background:var(--accent);border-radius:4px"></div>
-          </div>
-        </div>`;
-      }).join('')}
+      ${(()=>{
+        // If a person is selected, show their category breakdown; otherwise show family totals
+        const person=S.summaryPerson;
+        const wkStart=new Date(thisWk+'T00:00:00');
+        const wkEnd=new Date(thisWk+'T00:00:00');wkEnd.setDate(wkEnd.getDate()+6);wkEnd.setHours(23,59,59,999);
+        let catData={};
+        let catTotal=0;
+        if(person){
+          w.entries.filter(e=>e.person===person&&(()=>{const d=new Date(e.date+'T00:00:00');return d>=wkStart&&d<=wkEnd;})()).forEach(e=>{
+            catData[e.category]=(catData[e.category]||0)+e.amount;
+            catTotal+=e.amount;
+          });
+        } else {
+          catData=w.byCategory;
+          catTotal=w.total;
+        }
+        const label=person?PERSON_COLORS[person]:'var(--accent)';
+        const title=person?person+"'s Categories":'TOP CATEGORIES';
+        const color=person?PERSON_COLORS[person]:'var(--accent)';
+        const entries=Object.entries(catData).sort((a,b)=>b[1]-a[1]).slice(0,8);
+        if(!entries.length)return'<div class="section-label" style="margin-top:4px">'+title+'</div><div style="font-size:12px;color:var(--text3)">No expenses for this period.</div>';
+        return'<div class="section-label" style="margin-top:4px;color:'+label+'">'+title+'</div>'+entries.map(([cat,amt])=>{
+          const icon=CATEGORIES.find(c=>c.label===cat)?.icon||'💰';
+          const pct2=catTotal>0?Math.min((amt/catTotal)*100,100):0;
+          return'<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>'+icon+' '+cat+'</span><span style="color:var(--accent2);font-weight:bold">'+fmtMoney(amt)+'</span></div><div style="background:var(--surface2);border-radius:4px;height:4px;overflow:hidden"><div style="width:'+pct2+'%;height:100%;background:'+color+';border-radius:4px"></div></div></div>';
+        }).join('');
+      })()}
     </div>`;
   }
 
