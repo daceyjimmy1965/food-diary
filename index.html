@@ -59,6 +59,7 @@ input:focus,textarea:focus{outline:none;border-color:#5ec45e!important}
 <script>
 const SHEET_URL='https://script.google.com/macros/s/AKfycbxK0s26J0Z4ES_IRdJ0JsTWAuFf2zVs23aneS1QpjHL1RN0OCbyz7m1mdKGf-Eq2-8U/exec';
 const DS_KEY='fd-deepseekKey';
+const CACHE_KEY='fd-lookupCache';
 
 let state={
   entries:{},weights:{},goal:2000,weightUnit:'kg',
@@ -67,7 +68,8 @@ let state={
   foodName:'',calories:'',protein:'',carbs:'',fat:'',
   entryDate:'',
   weightInput:'',
-  lookupStatus:'',lookupNote:'',lookupConfidence:'',
+  lookupStatus:'',lookupNote:'',lookupConfidence:'',fromCache:false,
+  lookupCache:{},
   showMacros:false,editGoal:false,goalInput:'2000',
   syncStatus:'',lastSync:''
 };
@@ -81,6 +83,7 @@ function loadLocal(){
     const wu=localStorage.getItem('fd-weightUnit');if(wu)state.weightUnit=wu;
     const dk=localStorage.getItem(DS_KEY);if(dk)state.deepseekKey=dk;
     const ls=localStorage.getItem('fd-lastSync');if(ls)state.lastSync=ls;
+    const lc=localStorage.getItem(CACHE_KEY);if(lc)state.lookupCache=JSON.parse(lc);
   }catch(e){}
 }
 
@@ -160,30 +163,63 @@ function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 
 function getApiKey(){return localStorage.getItem(DS_KEY)||state.deepseekKey||'';}
 
+function normalizeFoodKey(s){
+  return String(s||'').toLowerCase().trim().replace(/\s+/g,' ').replace(/[.,!?]/g,'');
+}
+
+function saveCache(){
+  try{localStorage.setItem(CACHE_KEY,JSON.stringify(state.lookupCache));}catch(e){}
+}
+
+function clearCache(){
+  if(!confirm('Clear all cached lookups? Future lookups will hit the API again.'))return;
+  state.lookupCache={};
+  localStorage.removeItem(CACHE_KEY);
+  alert('Cache cleared.');
+  render();
+}
+
 async function lookupNutrition(description){
   const key=getApiKey();
   if(!key){alert('Please set your DeepSeek API key in Settings first!');return null;}
+
+  // Cache check — return instantly if we've seen this exact food before
+  const cacheKey=normalizeFoodKey(description);
+  if(state.lookupCache[cacheKey]){
+    const cached=state.lookupCache[cacheKey];
+    return {...cached,_fromCache:true};
+  }
+
+  const systemPrompt='You are a deterministic nutrition database. Return ONLY a valid JSON object with no markdown: {"calories":350,"protein":28,"carbs":45,"fat":8,"description":"clean food name","confidence":"high","note":"portion assumptions used"}. RULES: (1) Same input MUST give same output every time. (2) If portion size is not specified, use ONE STANDARD AUSTRALIAN SERVING. Defaults: sandwich = 2 slices standard white bread + 100g protein + 1 tbsp mayo + 1 tsp butter. Burger = 100g patty + bun + standard toppings. Pasta dish = 1 cup cooked (200g). Rice = 1 cup cooked (180g). Coffee = medium (240ml). Glass of wine = 150ml. (3) ALWAYS state your portion assumptions in the "note" field, e.g. "2 slices bread, 100g chicken, 1 tbsp mayo, 1 tsp butter". (4) If genuinely unknown, set numeric fields to null and explain in note.';
+
   const response=await fetch('https://api.deepseek.com/chat/completions',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
     body:JSON.stringify({
       model:'deepseek-chat',
       messages:[
-        {role:'system',content:'You are a nutrition expert. Return ONLY a valid JSON object with no markdown: {"calories":350,"protein":28,"carbs":45,"fat":8,"description":"clean food name","confidence":"high","note":"brief note"}. If unknown set numeric fields to null.'},
+        {role:'system',content:systemPrompt},
         {role:'user',content:description}
       ],
-      temperature:0.3,max_tokens:300
+      temperature:0,max_tokens:400
     })
   });
   if(!response.ok)throw new Error('API error '+response.status);
   const data=await response.json();
-  return JSON.parse(data.choices[0].message.content.replace(/```json|```/g,'').trim());
+  const result=JSON.parse(data.choices[0].message.content.replace(/```json|```/g,'').trim());
+
+  // Cache successful lookups (those with real numeric calories)
+  if(result&&result.calories!==null&&!isNaN(result.calories)){
+    state.lookupCache[cacheKey]=result;
+    saveCache();
+  }
+  return result;
 }
 
 async function handleLookup(){
   const name=state.foodName.trim();
   if(!name)return;
-  state.lookupStatus='loading';state.lookupNote='';
+  state.lookupStatus='loading';state.lookupNote='';state.fromCache=false;
   state.calories='';state.protein='';state.carbs='';state.fat='';
   render();
   try{
@@ -196,6 +232,7 @@ async function handleLookup(){
       state.foodName=r.description||name;
       state.lookupNote=r.note||'';
       state.lookupConfidence=r.confidence||'';
+      state.fromCache=!!r._fromCache;
       state.lookupStatus='done';
       state.showMacros=true;
     }else{
@@ -335,7 +372,7 @@ function renderToday(){
   html+='<button id="lookup-btn" class="btn-secondary" onclick="handleLookup()"'+(lookupDisabled?' disabled':'')+'>'+(state.lookupStatus==='loading'?'🔍…':'🤖 Look Up')+'</button>';
   html+='</div>';
 
-  if(state.lookupStatus==='done')html+='<div class="lookup-result"><div style="display:flex;justify-content:space-between;"><span style="color:#7ec87e;">Found: <strong>'+state.calories+' cal</strong> · P:'+state.protein+'g · C:'+state.carbs+'g · F:'+state.fat+'g</span>'+(badges[state.lookupConfidence]||'')+'</div>'+(state.lookupNote?'<div style="color:#4a7e5a;margin-top:3px;font-size:12px;">ℹ️ '+esc(state.lookupNote)+'</div>':'')+'</div>';
+  if(state.lookupStatus==='done')html+='<div class="lookup-result"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="color:#7ec87e;">Found: <strong>'+state.calories+' cal</strong> · P:'+state.protein+'g · C:'+state.carbs+'g · F:'+state.fat+'g</span>'+(state.fromCache?'<span style="color:#5ec45e;font-size:11px;background:#0f2a1a;border:1px solid #2a5c2a;border-radius:4px;padding:2px 6px;">⚡ Cached</span>':(badges[state.lookupConfidence]||''))+'</div>'+(state.lookupNote?'<div style="color:#4a7e5a;margin-top:3px;font-size:12px;"><strong>Assumptions:</strong> '+esc(state.lookupNote)+'</div>':'')+'</div>';
   if(state.lookupStatus==='error')html+='<div class="lookup-error">'+esc(state.lookupNote)+'</div>';
 
   html+='<div style="display:flex;gap:7px;margin-bottom:'+(state.showMacros?'7px':'0')+';"><input id="calories-input" class="input-field" type="number" placeholder="Calories" value="'+esc(state.calories)+'" style="flex:1;"><button class="btn-small" onclick="state.showMacros=!state.showMacros;render();">'+(state.showMacros?'▲':'▼')+' Macros</button></div>';
@@ -382,6 +419,10 @@ function renderSettings(){
     +'<div class="info-text" style="margin-bottom:10px;">When switching devices tap Pull to load latest data. Data saves automatically when you add food.</div>'
     +'<button class="btn-small" style="width:100%;margin-bottom:8px;" onclick="pullFromSheet()">⬇️ Pull from Google Sheets</button>'
     +(state.lastSync?'<div style="font-size:11px;color:#2a5c2a;margin-top:6px;">Last sync: '+state.lastSync+'</div>':'')+'</div>'
+    +'<div class="settings-section"><div class="section-label">⚡ LOOKUP CACHE</div>'
+    +'<div style="font-size:12px;color:#5ec45e;margin-bottom:8px;">'+Object.keys(state.lookupCache).length+' cached lookup'+(Object.keys(state.lookupCache).length===1?'':'s')+'</div>'
+    +'<button class="btn-small" style="width:100%;color:#e09b30;border-color:#5c4a2a;" onclick="clearCache()">🗑️ Clear Cache</button>'
+    +'<div class="info-text">Repeat lookups skip the API and return instantly. Clear if estimates feel stale.</div></div>'
     +'<div class="settings-section"><div class="section-label">💾 BACKUP &amp; RESTORE</div>'
     +'<button class="btn-small" style="width:100%;margin-bottom:8px;" onclick="exportData()">⬇️ Export All Data (JSON)</button>'
     +'<label class="btn-small" style="display:block;text-align:center;cursor:pointer;">⬆️ Import Backup<input type="file" accept=".json" style="display:none;" onchange="importData(event)"></label>'
