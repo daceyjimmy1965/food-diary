@@ -142,8 +142,6 @@ async function pullFromSheet(){
       if(parsed.personGoals)S.personGoals=parsed.personGoals;
       S.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
       S.syncStatus='pulled';saveLocal();
-      // Push merged data back to sheet so it's up to date
-      await pushToSheet();
     }else{S.syncStatus='empty';}
   }catch(e){S.syncStatus='blocked';}
   render();
@@ -482,7 +480,7 @@ function renderSettings(){
       <button class="btn-small" style="width:100%;margin-bottom:6px" onclick="pullFromSheet()">⬇️ Pull from Google Sheets</button>
       ${S.lastSync?`<div style="font-size:11px;color:#2a5c2a;margin-top:4px">Last sync: ${S.lastSync}</div>`:''}
       ${S.syncStatus==='ok'?`<div class="sync-ok">✓ Saved to Google Sheets</div>`:''}
-      ${S.syncStatus==='blocked'||S.syncStatus==='error'?`<div class="sync-err">⚠️ Could not reach Google Sheets. Data saved locally.</div>`:''}
+      ${S.syncStatus==='error'?`<div class="sync-err">⚠️ Could not reach Google Sheets. Data saved locally.</div>`:''}
     </div>
 
     <div class="settings-card">
