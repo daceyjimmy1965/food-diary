@@ -8,7 +8,7 @@
 :root{
   --bg:#0d0d1a;--surface:#16162a;--surface2:#1e1e35;--border:#2a2a45;
   --accent:#7c6af7;--accent2:#a89ff7;--green:#5ec45e;--red:#e05555;--orange:#e09b30;
-  --text:#e8e8f8;--text2:#7a7a9a;--text3:#4a4a6a;
+  --text:#ffffff;--text2:#c0c0d8;--text3:#9090b0;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Georgia',serif;min-height:100vh;overflow-x:hidden}
@@ -81,6 +81,8 @@ let S={
   selectedDate:'',
   filterPerson:'All',
   personDetail:'',
+  summaryPerson:'',
+  summaryExpanded:false,
   syncStatus:'',lastSync:'',
   weeklyBudget:parseFloat(localStorage.getItem('fd-weekly-budget'))||500,
   personGoals:JSON.parse(localStorage.getItem('fd-person-goals')||JSON.stringify(DEFAULT_GOALS)),
@@ -337,30 +339,48 @@ function renderSummary(){
         <div style="width:${pct}%;height:100%;background:${over?'var(--red)':'var(--accent)'};border-radius:6px;transition:width 0.4s"></div>
       </div>
 
-      <div class="section-label">BY PERSON</div>
+      <div class="section-label">BY PERSON <span style="font-size:9px;color:var(--text3);font-weight:normal;letter-spacing:0">(tap to see expenses)</span></div>
       ${PEOPLE.map(p=>{
         const spent=w.byPerson[p]||0;
         const goal=S.personGoals[p]||0;
         const pctP=goal?Math.min((spent/goal)*100,100):0;
         const overP=goal&&spent>goal;
         const barColor=overP?'var(--red)':pctP>85?'var(--orange)':PERSON_COLORS[p];
-        return`<div style="margin-bottom:12px;padding:10px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <div style="display:flex;align-items:center;gap:8px">
-              <div style="width:10px;height:10px;border-radius:50%;background:${PERSON_COLORS[p]}"></div>
-              <span style="font-size:14px;font-weight:bold;color:${PERSON_COLORS[p]}">${p}</span>
-            </div>
-            <div style="text-align:right">
-              <span style="font-size:18px;font-weight:bold;color:${overP?'var(--red)':'var(--text)'}">${fmtMoney(spent)}</span>
-              ${goal?`<span style="font-size:11px;color:var(--text3)"> / ${fmtMoney(goal)}</span>`:''}
-            </div>
-          </div>
-          ${goal?`<div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pctP}%;background:${barColor}"></div></div>
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px">
-            <span>${Math.round(pctP)}% of goal</span>
-            <span style="color:${barColor}">${overP?'▲ '+fmtMoney(spent-goal)+' over':'▼ '+fmtMoney(goal-spent)+' remaining'}</span>
-          </div>`:'<div style="font-size:10px;color:var(--text3)">No goal set</div>'}
-        </div>`;
+        const isOpen=S.summaryPerson===p;
+        const personEntries=w.entries.filter(e=>e.person===p).sort((a,b)=>b.id-a.id);
+        let detailHtml='';
+        if(isOpen){
+          if(personEntries.length>0){
+            detailHtml=personEntries.map(e=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid var(--border)"><div><div style="font-size:13px;color:var(--text)">'+(CATEGORIES.find(c=>c.label===e.category)?.icon||'💰')+' '+esc(e.category)+(e.note?' — '+esc(e.note):'')+' </div><div style="font-size:10px;color:var(--text3)">'+fmtDate(e.date)+' · '+e.time+'</div></div><span style="font-size:14px;font-weight:bold;color:var(--accent2)">'+fmtMoney(e.amount)+'</span></div>').join('');
+          } else {
+            detailHtml='<div style="font-size:12px;color:var(--text3);padding-top:8px;border-top:1px solid var(--border)">No expenses this week</div>';
+          }
+        }
+        const borderCol=isOpen?PERSON_COLORS[p]:'var(--border)';
+        const arrow=isOpen?'▲':'▼';
+        let html='<div style="margin-bottom:12px;padding:10px;background:var(--bg);border-radius:10px;border:1px solid '+borderCol+';cursor:pointer" onclick="S.summaryPerson=S.summaryPerson===\''+p+'\'?\'\':\''+p+'\';render()">';
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+        html+='<div style="display:flex;align-items:center;gap:8px">';
+        html+='<div style="width:10px;height:10px;border-radius:50%;background:'+PERSON_COLORS[p]+'"></div>';
+        html+='<span style="font-size:14px;font-weight:bold;color:'+PERSON_COLORS[p]+'">'+p+'</span>';
+        html+='<span style="font-size:11px;color:var(--text3)">'+arrow+'</span>';
+        html+='</div>';
+        html+='<div style="text-align:right">';
+        html+='<span style="font-size:18px;font-weight:bold;color:'+(overP?'var(--red)':'var(--text)')+'">'+fmtMoney(spent)+'</span>';
+        if(goal)html+='<span style="font-size:11px;color:var(--text3)"> / '+fmtMoney(goal)+'</span>';
+        html+='</div></div>';
+        if(goal){
+          html+='<div class="progress-bar-bg"><div class="progress-bar-fill" style="width:'+pctP+'%;background:'+barColor+'"></div></div>';
+          html+='<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px">';
+          html+='<span>'+Math.round(pctP)+'% of goal</span>';
+          html+='<span style="color:'+barColor+'">'+(overP?'▲ '+fmtMoney(spent-goal)+' over':'▼ '+fmtMoney(goal-spent)+' remaining')+'</span>';
+          html+='</div>';
+        } else {
+          html+='<div style="font-size:10px;color:var(--text3)">No goal set</div>';
+        }
+        html+=detailHtml;
+        html+='</div>';
+        return html;
       }).join('')}
 
       <div class="section-label" style="margin-top:4px">TOP CATEGORIES</div>
