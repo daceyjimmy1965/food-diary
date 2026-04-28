@@ -90,7 +90,7 @@ let S={
 };
 
 function today(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
-function weekKey(d){const dt=new Date(d+'T00:00:00');const day=dt.getDay();const diff=dt.getDate()-day+(day===0?-6:1);const m=new Date(dt);m.setDate(diff);return m.toISOString().slice(0,10)}
+function weekKey(d){const dt=new Date(d+'T00:00:00');const day=dt.getDay();const diff=dt.getDate()-day+(day===0?-6:1);const m=new Date(dt);m.setDate(diff);return m.getFullYear()+'-'+String(m.getMonth()+1).padStart(2,'0')+'-'+String(m.getDate()).padStart(2,'0')}
 function fmtDate(d){return new Date(d+'T00:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}
 function fmtMoney(n){return'$'+(n||0).toFixed(2)}
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
