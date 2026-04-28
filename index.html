@@ -20,14 +20,14 @@ input:focus,textarea:focus{outline:none;border-color:#5ec45e!important}
 .tab{flex:1;background:transparent;color:#4a8c4a;border:none;border-radius:7px;padding:9px 0;cursor:pointer;font-weight:bold;font-size:12px;transition:all 0.2s}
 .tab.active{background:#5ec45e;color:#0f1a0f}
 .card{background:#162216;border-radius:14px;padding:14px;margin:10px 0}
-.section-label{font-size:12px;color:#4a8c4a;margin-bottom:8px;font-weight:bold}
+.section-label{font-size:13px;color:#a8e8a8;margin-bottom:8px;font-weight:bold}
 .input-field{background:#2a4a2a;border:2px solid #7ec87e;border-radius:8px;color:#ffffff;padding:11px 12px;font-size:16px;width:100%}
 .btn{border:none;border-radius:8px;padding:11px 16px;font-weight:bold;font-size:15px;cursor:pointer}
 .btn-primary{background:#5ec45e;color:#0f1a0f}
 .btn-primary:disabled{background:#2a3d2a;color:#3a5e3a;cursor:not-allowed}
 .btn-secondary{background:#1a3d2a;border:1px solid #2a6e3a;color:#5ec45e;font-size:12px;padding:10px 11px;font-weight:bold;white-space:nowrap;border-radius:8px;cursor:pointer}
 .btn-secondary:disabled{opacity:0.5;cursor:not-allowed}
-.btn-small{background:#1a2e1a;border:1px solid #2a3d2a;color:#4a8c4a;padding:10px 12px;font-size:12px;border-radius:8px;cursor:pointer}
+.btn-small{background:#1a3a1a;border:1px solid #5a8c5a;color:#a8e8a8;padding:10px 12px;font-size:13px;border-radius:8px;cursor:pointer}
 .entry-card{background:#162216;border-radius:10px;padding:11px 13px;margin-bottom:6px;border-left:3px solid #2a5c2a;display:flex;justify-content:space-between;align-items:center}
 .entry-name{font-size:14px;color:#e8f0e8}
 .entry-meta{font-size:11px;color:#3a5e3a;margin-top:1px}
@@ -46,7 +46,7 @@ input:focus,textarea:focus{outline:none;border-color:#5ec45e!important}
 .unit-btn.active{background:#2a5c2a;color:#7ec87e}
 .settings-section{background:#162216;border-radius:12px;padding:14px;margin-bottom:10px}
 .api-key-input{background:#2a4a2a;border:2px solid #7ec87e;border-radius:8px;color:#ffffff;padding:11px 12px;font-size:15px;width:100%;font-family:monospace}
-.info-text{font-size:11px;color:#2a4a2a;margin-top:7px;line-height:1.5}
+.info-text{font-size:12px;color:#8cc88c;margin-top:7px;line-height:1.5}
 .alert-banner{background:#2a1a0a;border:1px solid #6e4a1a;border-radius:10px;padding:10px 14px;margin:12px 0;font-size:12px;color:#c0844a}
 .sync-banner{background:#0f2a1a;border:1px solid #2a5c2a;border-radius:10px;padding:10px 14px;margin:10px 0;font-size:12px;color:#5ec45e}
 .date-input{background:#2a4a2a;border:2px solid #7ec87e;border-radius:8px;color:#ffffff;padding:10px 12px;font-size:15px;width:100%;font-weight:bold}
@@ -438,7 +438,7 @@ function renderSettings(){
     +'<div class="settings-section"><div class="section-label">☁️ SYNC BETWEEN DEVICES</div>'
     +'<div class="info-text" style="margin-bottom:10px;">When switching devices tap Pull to load latest data. Data saves automatically when you add food.</div>'
     +'<button class="btn-small" style="width:100%;margin-bottom:8px;" onclick="pullFromSheet()">⬇️ Pull from Google Sheets</button>'
-    +(state.lastSync?'<div style="font-size:11px;color:#2a5c2a;margin-top:6px;">Last sync: '+state.lastSync+'</div>':'')+'</div>'
+    +(state.lastSync?'<div style="font-size:12px;color:#8cc88c;margin-top:6px;">Last sync: '+state.lastSync+'</div>':'')+'</div>'
     +'<div class="settings-section"><div class="section-label">⚡ LOOKUP CACHE</div>'
     +'<div style="font-size:12px;color:#5ec45e;margin-bottom:8px;">'+Object.keys(state.lookupCache).length+' cached lookup'+(Object.keys(state.lookupCache).length===1?'':'s')+'</div>'
     +'<button class="btn-small" style="width:100%;color:#e09b30;border-color:#5c4a2a;" onclick="clearCache()">🗑️ Clear Cache</button>'
