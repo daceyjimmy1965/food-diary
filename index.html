@@ -279,7 +279,7 @@ function saveSettings(){
 }
 
 function exportData(){
-  const data=JSON.stringify({entries:state.entries,weights:state.weights,goal:state.goal},null,2);
+  const data=JSON.stringify({entries:state.entries,weights:state.weights,goal:state.goal,lookupCache:state.lookupCache},null,2);
   const blob=new Blob([data],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download='food-diary-backup-'+getTodayKey()+'.json';a.click();
@@ -288,7 +288,7 @@ function exportData(){
 function importData(event){
   const file=event.target.files[0];if(!file)return;
   const reader=new FileReader();
-  reader.onload=(e)=>{try{const imp=JSON.parse(e.target.result);if(confirm('Replace all current data?')){state.entries=imp.entries||{};state.weights=imp.weights||{};state.goal=imp.goal||2000;state.goalInput=String(state.goal);saveAndSync();alert('Imported!');}}catch(err){alert('Invalid file');}};
+  reader.onload=(e)=>{try{const imp=JSON.parse(e.target.result);if(confirm('Replace all current data?')){state.entries=imp.entries||{};state.weights=imp.weights||{};state.goal=imp.goal||2000;state.goalInput=String(state.goal);if(imp.lookupCache)state.lookupCache={...state.lookupCache,...imp.lookupCache};saveCache();saveAndSync();alert('Imported! Cache entries: '+Object.keys(state.lookupCache).length);}}catch(err){alert('Invalid file');}};
   reader.readAsText(file);
 }
 
