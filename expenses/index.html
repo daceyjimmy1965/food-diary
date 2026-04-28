@@ -113,9 +113,12 @@ function saveLocal(){
 async function pushToSheet(){
   try{
     const data=JSON.stringify({expenses:S.expenses,weeklyBudget:S.weeklyBudget,personGoals:S.personGoals});
-    fetch(SHEET_URL+'?action=set&key=family-expenses&value='+encodeURIComponent(data),{mode:'no-cors'});
-    S.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
-    S.syncStatus='ok';localStorage.setItem('exp-lastsync',S.lastSync);
+    const res=await fetch(SHEET_URL+'?action=set&key=family-expenses&value='+encodeURIComponent(data));
+    const json=await res.json();
+    if(json&&json.success){
+      S.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+      S.syncStatus='ok';localStorage.setItem('exp-lastsync',S.lastSync);
+    } else { S.syncStatus='error'; }
   }catch(e){S.syncStatus='error';}
 }
 async function pullFromSheet(){
@@ -125,11 +128,25 @@ async function pullFromSheet(){
     const json=await res.json();
     if(json&&json.value&&json.value!=='null'){
       const parsed=JSON.parse(json.value);
-      S.expenses=parsed.expenses||{};
+      // MERGE: combine remote and local expenses, keeping the newer entry when IDs clash
+      const remote=parsed.expenses||{};
+      const merged={...S.expenses};
+      Object.keys(remote).forEach(date=>{
+        if(!merged[date]){
+          merged[date]=remote[date];
+        } else {
+          // Add any remote entries whose IDs don't exist locally
+          const localIds=new Set(merged[date].map(e=>e.id));
+          remote[date].forEach(e=>{ if(!localIds.has(e.id)) merged[date].push(e); });
+        }
+      });
+      S.expenses=merged;
       if(parsed.weeklyBudget)S.weeklyBudget=parsed.weeklyBudget;
       if(parsed.personGoals)S.personGoals=parsed.personGoals;
       S.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
       S.syncStatus='pulled';saveLocal();
+      // Push merged data back to sheet so it's up to date
+      await pushToSheet();
     }else{S.syncStatus='empty';}
   }catch(e){S.syncStatus='blocked';}
   render();
