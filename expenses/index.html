@@ -404,7 +404,7 @@ function renderSummary(){
 
       ${(()=>{
         // If a person is selected, show their category breakdown; otherwise show family totals
-        const person=S.summaryPerson;
+        const person=S.selectedPerson;
         const wkStart=new Date(thisWk+'T00:00:00');
         const wkEnd=new Date(thisWk+'T00:00:00');wkEnd.setDate(wkEnd.getDate()+6);wkEnd.setHours(23,59,59,999);
         let catData={};
@@ -419,7 +419,7 @@ function renderSummary(){
           catTotal=w.total;
         }
         const label=person?PERSON_COLORS[person]:'var(--accent)';
-        const title=person?person+"'s Categories":'TOP CATEGORIES';
+        const title=person?person+"'s Categories":'TOTAL CATEGORIES';
         const color=person?PERSON_COLORS[person]:'var(--accent)';
         const entries=Object.entries(catData).sort((a,b)=>b[1]-a[1]).slice(0,8);
         if(!entries.length)return'<div class="section-label" style="margin-top:4px">'+title+'</div><div style="font-size:12px;color:var(--text3)">No expenses for this period.</div>';
