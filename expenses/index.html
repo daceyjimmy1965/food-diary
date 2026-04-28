@@ -364,7 +364,9 @@ function renderSummary(){
         const overP=goal&&spent>goal;
         const barColor=overP?'var(--red)':pctP>85?'var(--orange)':PERSON_COLORS[p];
         const isOpen=S.summaryPerson===p;
-        const personEntries=w.entries.filter(e=>e.person===p).sort((a,b)=>b.id-a.id);
+        const wkStart=new Date(thisWk+'T00:00:00');
+        const wkEnd=new Date(thisWk+'T00:00:00');wkEnd.setDate(wkEnd.getDate()+6);wkEnd.setHours(23,59,59,999);
+        const personEntries=w.entries.filter(e=>e.person===p&&(()=>{const d=new Date(e.date+'T00:00:00');return d>=wkStart&&d<=wkEnd;})()).sort((a,b)=>b.id-a.id);
         let detailHtml='';
         if(isOpen){
           if(personEntries.length>0){
