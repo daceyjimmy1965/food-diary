@@ -404,7 +404,7 @@ function renderSummary(){
 
       ${(()=>{
         // If a person is selected, show their category breakdown; otherwise show family totals
-        const person=S.selectedPerson;
+        const person=S.selectedPerson||'';
         const wkStart=new Date(thisWk+'T00:00:00');
         const wkEnd=new Date(thisWk+'T00:00:00');wkEnd.setDate(wkEnd.getDate()+6);wkEnd.setHours(23,59,59,999);
         let catData={};
@@ -418,7 +418,7 @@ function renderSummary(){
           catData=w.byCategory;
           catTotal=w.total;
         }
-        const label=person?PERSON_COLORS[person]:'var(--accent)';
+        const label=person&&PERSON_COLORS[person]?PERSON_COLORS[person]:'var(--accent2)';
         const title=person?person+"'s Categories":'TOTAL CATEGORIES';
         const color=person?PERSON_COLORS[person]:'var(--accent)';
         const entries=Object.entries(catData).sort((a,b)=>b[1]-a[1]).slice(0,8);
