@@ -100,14 +100,16 @@ function saveLocal(){
 
 async function pushToSheet(){
   try{
-    // Send each day as its own key — keeps each URL tiny
     const today=getTodayKey();
-    // Push today and yesterday to cover backdating
-    const daysToPush=Object.keys(state.entries).sort().reverse().slice(0,7);
-    daysToPush.forEach(d=>{
-      fetch(SHEET_URL+'?action=set&key=fd-day-'+d+'&value='+encodeURIComponent(JSON.stringify(state.entries[d])),{mode:'no-cors'});
+    const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+    const yKey=`${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+    // Only push today and yesterday — never overwrite older historical days
+    // Historical days are only ever written via Pull (which has the authoritative data)
+    [today,yKey].forEach(d=>{
+      if(state.entries[d]){
+        fetch(SHEET_URL+'?action=set&key=fd-day-'+d+'&value='+encodeURIComponent(JSON.stringify(state.entries[d])),{mode:'no-cors'});
+      }
     });
-    // Push the list of all dates so pull knows what to fetch
     fetch(SHEET_URL+'?action=set&key=fd-dates&value='+encodeURIComponent(JSON.stringify(Object.keys(state.entries).sort().reverse().slice(0,60))),{mode:'no-cors'});
     fetch(SHEET_URL+'?action=set&key=fd-weights&value='+encodeURIComponent(JSON.stringify(state.weights)),{mode:'no-cors'});
     fetch(SHEET_URL+'?action=set&key=fd-goal&value='+encodeURIComponent(String(state.goal)),{mode:'no-cors'});
