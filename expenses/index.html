@@ -112,8 +112,15 @@ function saveLocal(){
 }
 async function pushToSheet(){
   try{
-    const data=JSON.stringify({expenses:S.expenses,weeklyBudget:S.weeklyBudget,personGoals:S.personGoals});
-    fetch(SHEET_URL+'?action=set&key=family-expenses&value='+encodeURIComponent(data),{mode:'no-cors'});
+    // Send settings as one key
+    const settings=JSON.stringify({weeklyBudget:S.weeklyBudget,personGoals:S.personGoals});
+    fetch(SHEET_URL+'?action=set&key=exp-settings&value='+encodeURIComponent(settings),{mode:'no-cors'});
+    // Send each day separately to avoid URL length limits on mobile
+    const dates=Object.keys(S.expenses);
+    for(const date of dates){
+      const dayData=JSON.stringify(S.expenses[date]);
+      fetch(SHEET_URL+'?action=set&key=exp-day-'+date+'&value='+encodeURIComponent(dayData),{mode:'no-cors'});
+    }
     S.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
     S.syncStatus='ok';localStorage.setItem('exp-lastsync',S.lastSync);
   }catch(e){S.syncStatus='error';}
@@ -121,28 +128,34 @@ async function pushToSheet(){
 async function pullFromSheet(){
   S.syncStatus='pulling';render();
   try{
-    const res=await fetch(SHEET_URL+'?action=get&key=family-expenses');
-    const json=await res.json();
-    if(json&&json.value&&json.value!=='null'){
-      const parsed=JSON.parse(json.value);
-      // MERGE: combine remote and local expenses, keeping the newer entry when IDs clash
-      const remote=parsed.expenses||{};
-      const merged={...S.expenses};
-      Object.keys(remote).forEach(date=>{
-        if(!merged[date]){
-          merged[date]=remote[date];
-        } else {
-          // Add any remote entries whose IDs don't exist locally
-          const localIds=new Set(merged[date].map(e=>e.id));
-          remote[date].forEach(e=>{ if(!localIds.has(e.id)) merged[date].push(e); });
-        }
-      });
-      S.expenses=merged;
-      if(parsed.weeklyBudget)S.weeklyBudget=parsed.weeklyBudget;
-      if(parsed.personGoals)S.personGoals=parsed.personGoals;
-      S.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
-      S.syncStatus='pulled';saveLocal();
-    }else{S.syncStatus='empty';}
+    // Pull all keys and find exp-day-* and exp-settings
+    const res=await fetch(SHEET_URL);
+    const all=await res.json();
+    const merged={...S.expenses};
+    Object.keys(all).forEach(key=>{
+      if(key.indexOf('exp-day-')===0){
+        const date=key.replace('exp-day-','');
+        try{
+          const remote=JSON.parse(all[key]);
+          if(!merged[date]){
+            merged[date]=remote;
+          } else {
+            const localIds=new Set(merged[date].map(e=>e.id));
+            remote.forEach(e=>{ if(!localIds.has(e.id)) merged[date].push(e); });
+          }
+        }catch(e){}
+      }
+      if(key==='exp-settings'){
+        try{
+          const s=JSON.parse(all[key]);
+          if(s.weeklyBudget)S.weeklyBudget=s.weeklyBudget;
+          if(s.personGoals)S.personGoals=s.personGoals;
+        }catch(e){}
+      }
+    });
+    S.expenses=merged;
+    S.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+    S.syncStatus='pulled';saveLocal();
   }catch(e){S.syncStatus='blocked';}
   render();
 }
