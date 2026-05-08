@@ -159,7 +159,12 @@ async function pullFromSheet(){
   }catch(e){S.syncStatus='blocked';}
   render();
 }
-async function saveAndSync(){saveLocal();await pushToSheet();render();}
+let _syncTimer=null;
+async function saveAndSync(){
+  saveLocal();render();
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(()=>pushToSheet(),2000);
+}
 
 function addExpense(){
   if(!S.selectedPerson||!S.selectedCategory||!S.amount)return;
