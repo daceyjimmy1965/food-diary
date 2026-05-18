@@ -85,6 +85,7 @@ let S={
   summaryExpanded:false,
   selectedWeek:'',
   syncStatus:'',lastSync:'',
+  isAdding:false,
   weeklyBudget:parseFloat(localStorage.getItem('fd-weekly-budget'))||500,
   personGoals:JSON.parse(localStorage.getItem('fd-person-goals')||JSON.stringify(DEFAULT_GOALS)),
 };
@@ -94,6 +95,33 @@ function weekKey(d){const dt=new Date(d+'T00:00:00');const day=dt.getDay();const
 function fmtDate(d){return new Date(d+'T00:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}
 function fmtMoney(n){return'$'+(n||0).toFixed(2)}
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function entryId(){
+  if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();
+  return 'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
+}
+function hashText(s){
+  let h=2166136261;
+  for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}
+  return (h>>>0).toString(36);
+}
+function legacyEntryId(e,date,index){
+  return 'legacy-'+hashText([date,e.person||'',e.category||'',e.amount||0,e.note||'',e.time||'',index].join('|'));
+}
+function ensureEntryIds(expenses){
+  let changed=false;
+  Object.keys(expenses||{}).forEach(date=>{
+    if(!Array.isArray(expenses[date]))return;
+    expenses[date].forEach((e,index)=>{
+      if(e&&!e.id){e.id=legacyEntryId(e,date,index);changed=true;}
+    });
+  });
+  return changed;
+}
+function entrySortValue(e){
+  if(e&&e.createdAt)return e.createdAt;
+  const n=Number(e&&e.id);
+  return Number.isFinite(n)?n:Date.parse((e&&e.date?e.date:today())+' '+(e&&e.time?e.time:'00:00'))||0;
+}
 
 function load(){
   try{
@@ -101,6 +129,7 @@ function load(){
     const wb=localStorage.getItem('fd-weekly-budget');if(wb)S.weeklyBudget=parseFloat(wb)||500;
     const pg=localStorage.getItem('fd-person-goals');if(pg)S.personGoals=JSON.parse(pg);
     const ls=localStorage.getItem('exp-lastsync');if(ls)S.lastSync=ls;
+    if(ensureEntryIds(S.expenses))saveLocal();
   }catch(e){}
 }
 function saveLocal(){
@@ -112,14 +141,15 @@ function saveLocal(){
 }
 async function pushToSheet(){
   try{
+    if(ensureEntryIds(S.expenses))saveLocal();
     // Send settings as one key
     const settings=JSON.stringify({weeklyBudget:S.weeklyBudget,personGoals:S.personGoals});
-    fetch(SHEET_URL+'?action=set&key=exp-settings&value='+encodeURIComponent(settings),{mode:'no-cors'});
+    await fetch(SHEET_URL+'?action=set&key=exp-settings&value='+encodeURIComponent(settings),{mode:'no-cors'});
     // Send each day separately to avoid URL length limits on mobile
     const dates=Object.keys(S.expenses);
     for(const date of dates){
       const dayData=JSON.stringify(S.expenses[date]);
-      fetch(SHEET_URL+'?action=set&key=exp-day-'+date+'&value='+encodeURIComponent(dayData),{mode:'no-cors'});
+      await fetch(SHEET_URL+'?action=set&key=exp-day-'+date+'&value='+encodeURIComponent(dayData),{mode:'no-cors'});
     }
     S.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
     S.syncStatus='ok';localStorage.setItem('exp-lastsync',S.lastSync);
@@ -140,6 +170,8 @@ async function pullFromSheet(){
           if(!merged[date]){
             merged[date]=remote;
           } else {
+            ensureEntryIds({[date]:remote});
+            ensureEntryIds({[date]:merged[date]});
             const localIds=new Set(merged[date].map(e=>e.id));
             remote.forEach(e=>{ if(!localIds.has(e.id)) merged[date].push(e); });
           }
@@ -153,6 +185,7 @@ async function pullFromSheet(){
         }catch(e){}
       }
     });
+    ensureEntryIds(merged);
     S.expenses=merged;
     S.lastSync=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
     S.syncStatus='pulled';saveLocal();
@@ -167,19 +200,21 @@ async function saveAndSync(){
 }
 
 function addExpense(){
-  if(!S.selectedPerson||!S.selectedCategory||!S.amount)return;
+  if(S.isAdding||!S.selectedPerson||!S.selectedCategory||!S.amount)return;
   const amt=parseFloat(S.amount);if(isNaN(amt)||amt<=0)return;
+  S.isAdding=true;
   const dateEl=document.getElementById('date-input');
   const entryDate=(dateEl&&dateEl.value)?dateEl.value:today();
   const time=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
-  const entry={id:Date.now(),person:S.selectedPerson,category:S.selectedCategory,amount:amt,note:S.note.trim(),time,date:entryDate};
+  const entry={id:entryId(),createdAt:Date.now(),person:S.selectedPerson,category:S.selectedCategory,amount:amt,note:S.note.trim(),time,date:entryDate};
   if(!S.expenses[entryDate])S.expenses[entryDate]=[];
   S.expenses[entryDate].push(entry);
   S.amount='';S.note='';
   saveAndSync();
+  setTimeout(()=>{S.isAdding=false;render();},700);
 }
 function removeExpense(date,id){
-  S.expenses[date]=S.expenses[date].filter(e=>e.id!==id);
+  S.expenses[date]=S.expenses[date].filter(e=>String(e.id)!==String(id));
   if(!S.expenses[date].length)delete S.expenses[date];
   saveAndSync();
 }
@@ -253,7 +288,7 @@ function renderAdd(){
   const filtered=S.filterPerson==='All'?allTodayExpenses:allTodayExpenses.filter(e=>e.person===S.filterPerson);
   const filteredTotal=filtered.reduce((s,e)=>s+e.amount,0);
   const allTotal=allTodayExpenses.reduce((s,e)=>s+e.amount,0);
-  const canAdd=S.selectedPerson&&S.selectedCategory&&S.amount&&parseFloat(S.amount)>0;
+  const canAdd=S.selectedPerson&&S.selectedCategory&&S.amount&&parseFloat(S.amount)>0&&!S.isAdding;
 
   let h='';
 
@@ -298,7 +333,7 @@ function renderAdd(){
       ${CATEGORIES.map(c=>`<button class="cat-btn ${S.selectedCategory===c.label?'active':''}" onclick="S.selectedCategory='${c.label}';render()">${c.icon}<br>${c.label}</button>`).join('')}
     </div>
     <button class="btn-primary" style="margin-top:10px" onclick="addExpense()"${!canAdd?' disabled':''}>
-      ${canAdd?`Add ${S.selectedPerson}'s ${S.selectedCategory}`:'Select category & amount'}
+      ${S.isAdding?'Saving...':canAdd?`Add ${S.selectedPerson}'s ${S.selectedCategory}`:'Select category & amount'}
     </button>
   </div>`;
 
@@ -325,7 +360,7 @@ function renderAdd(){
       </div>
       <div style="display:flex;align-items:center">
         <span style="font-size:16px;font-weight:bold;color:var(--accent2)">${fmtMoney(e.amount)}</span>
-        <button class="remove-btn" onclick="removeExpense('${t}',${e.id})">×</button>
+        <button class="remove-btn" onclick="removeExpense('${t}','${esc(e.id)}')">×</button>
       </div>
     </div>`).join('');
   }
@@ -396,7 +431,7 @@ function renderSummary(){
         const isOpen=S.summaryPerson===p;
         const wkStart=new Date(thisWk+'T00:00:00');
         const wkEnd=new Date(thisWk+'T00:00:00');wkEnd.setDate(wkEnd.getDate()+6);wkEnd.setHours(23,59,59,999);
-        const personEntries=w.entries.filter(e=>e.person===p&&(()=>{const d=new Date(e.date+'T00:00:00');return d>=wkStart&&d<=wkEnd;})()).sort((a,b)=>b.id-a.id);
+        const personEntries=w.entries.filter(e=>e.person===p&&(()=>{const d=new Date(e.date+'T00:00:00');return d>=wkStart&&d<=wkEnd;})()).sort((a,b)=>entrySortValue(b)-entrySortValue(a));
         let detailHtml='';
         if(isOpen){
           if(personEntries.length>0){
